@@ -18,8 +18,8 @@ suite("Create Enum", async () => {
   await suite("should not throw", async () => {
     const randStr = randomBytes(4).toString("hex");
     const scenarios = [
-      ["public.colors", ["RED", "BLUE"] as const],
-      ["services.roles", { ADMIN: "ADMIN", USER: "USER" } as const],
+      ["public.colors", ["RED", "BLUE"]],
+      ["services.roles", { ADMIN: "ADMIN", USER: "USER" }],
       ["domain.random", { [randStr]: randStr }],
     ] as Parameters<typeof pgEnumType>[];
     for (const idx in scenarios)
@@ -30,10 +30,10 @@ suite("Create Enum", async () => {
   await suite("should throw", async () => {
     const scenarios = [
       [],
-      ["without_schema", ["A"] as const],
-      ["public.empty", [] as const],
-      ["public.empty_object", {} as const],
-      ["public", { ACTIVE: "ACTIVE" } as const],
+      ["without_schema", ["A"]],
+      ["public.empty", []],
+      ["public.empty_object", {}],
+      ["public", { ACTIVE: "ACTIVE" }],
     ] as const;
     for (const idx in scenarios)
       await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
