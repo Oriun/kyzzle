@@ -75,7 +75,11 @@ export function pgEnumType<
       values,
     }),
     "__brand",
-    "EnumType",
+    {
+      value: "EnumType",
+      writable: false,
+      enumerable: false,
+    },
   );
 }
 
