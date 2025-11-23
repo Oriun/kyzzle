@@ -127,6 +127,9 @@ export type ToColumnType<Type extends DataType<any, any, any>> =
           : output<ZodSchemaType>
       >
     : never;
+export type ToTableType<Table extends PgTableDefinition<any, any>> = {
+  [column in keyof Table]: ToColumnType<Table[column]["type"]>;
+};
 
 export type KyselyTables<
   Tables extends Record<string, PgTableDefinition<any, any>>,

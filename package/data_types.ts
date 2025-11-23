@@ -279,7 +279,7 @@ class Timestamp<
   T extends string,
   Mode extends "timestamp" | "timestamptz",
 > extends DataType<T, Mode> {
-  protected precision?: number;
+  public precision?: number;
   constructor(
     name: T,
     parameters: {

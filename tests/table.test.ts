@@ -8,6 +8,7 @@ import {
   updateSchema,
   uuid,
   type KyselyTables,
+  type ToTableType,
 } from "kyzzle_test";
 import { randomBytes, randomUUID } from "node:crypto";
 import { basename, join } from "node:path";
@@ -104,6 +105,20 @@ suite("Create Table", async () => {
         updatedAt: new Date(),
       };
       const _invalidRow: CompaniesRow = {
+        // @ts-expect-error
+        id: "not-a-uuid",
+        // @ts-expect-error
+        name: 42,
+        // @ts-expect-error
+        updatedAt: {},
+      };
+      type CompaniesRow2 = Selectable<ToTableType<typeof Companies>>;
+      const _validRow2: CompaniesRow2 = {
+        id: randomUUID(),
+        name: "My Company",
+        updatedAt: new Date(),
+      };
+      const _invalidRow2: CompaniesRow2 = {
         // @ts-expect-error
         id: "not-a-uuid",
         // @ts-expect-error
