@@ -128,24 +128,21 @@ const TypesToZod = {
     .or(
       string()
         .date()
-        .transform((date) => new Date(date))
-        .nullable(),
+        .transform((date) => new Date(date)),
     )
     .nullable(),
   timestamp: zodDate()
     .or(
       string()
         .datetime()
-        .transform((date) => new Date(date))
-        .nullable(),
+        .transform((date) => new Date(date)),
     )
     .nullable(),
   timestamptz: zodDate()
     .or(
       string()
         .datetime()
-        .transform((date) => new Date(date))
-        .nullable(),
+        .transform((date) => new Date(date)),
     )
     .nullable(),
   serial: number().nullable(),
