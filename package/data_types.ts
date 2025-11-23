@@ -338,8 +338,8 @@ class UnParametered<
 }
 
 class Numeric<T extends string> extends DataType<T, "numeric"> {
-  protected precision?: number;
-  protected scale?: number;
+  public precision?: number;
+  public scale?: number;
   constructor(
     name: T,
     parameters: { precision?: number; scale?: number } = {},
