@@ -42,7 +42,10 @@ export function pgTable<
       } as const,
     ]),
   );
-  return table;
+  return {
+    ...table,
+    __brand: "Table",
+  };
 }
 
 export function pgEnumType<
