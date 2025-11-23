@@ -41,7 +41,7 @@ export type UpdateShema<ColumnDefinition extends PgTableColumnDefinition> =
       string]: ColumnDefinition[key] extends DataType<any, any, any, infer T>
       ? T extends { isImmutable: true } | { isGeneratedAlways: true }
         ? never
-        : ColumnDefinition[key]["zodSchema"] extends ZodOptional
+        : ColumnDefinition[key]["zodSchema"] extends ZodOptional<ZodType>
           ? ColumnDefinition[key]["zodSchema"]
           : ZodOptional<ColumnDefinition[key]["zodSchema"]>
       : never;

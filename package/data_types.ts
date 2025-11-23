@@ -1,10 +1,8 @@
 import {
   any,
-  iso,
   number,
   date as zodDate,
   string,
-  uuidv4,
   boolean as zodBoolean,
   ZodNullable,
   type ZodType,
@@ -117,23 +115,38 @@ const TypesToZod = {
   text: string(),
   varchar: string(),
   char: string(),
-  uuid: uuidv4().transform((uuid) => uuid as UUID),
+  uuid: string()
+    .uuid()
+    .transform((uuid) => uuid as UUID),
   bigint: number(),
   numeric: number(),
   ["double precision"]: number(),
   boolean: zodBoolean(),
   integer: number(),
-  date: zodDate().or(iso.date().transform((date) => new Date(date))),
-  timestamp: zodDate().or(iso.datetime().transform((date) => new Date(date))),
-  timestamptz: zodDate().or(iso.datetime().transform((date) => new Date(date))),
+  date: zodDate().or(
+    string()
+      .date()
+      .transform((date) => new Date(date)),
+  ),
+  timestamp: zodDate().or(
+    string()
+      .datetime()
+      .transform((date) => new Date(date)),
+  ),
+  timestamptz: zodDate().or(
+    string()
+      .datetime()
+      .transform((date) => new Date(date)),
+  ),
   serial: number(),
 } as const satisfies Record<string, ZodType>;
 
 export abstract class DataType<
   T extends string,
   PgType extends PgKnownTypes | (string & {}),
+  //@ts-ignore
   ZodschemaType extends ZodType = PgType extends keyof typeof TypesToZod
-    ? (typeof TypesToZod)[PgType] & ZodType
+    ? (typeof TypesToZod)[PgType]
     : ZodType,
   Parameters extends ParametersWithTypeImpact = {},
 > {

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       zod:
-        specifier: ^4
-        version: 4.1.12
+        specifier: ^3.25.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -33,7 +33,7 @@ importers:
     optionalDependencies:
       kyzzle_test:
         specifier: file:./
-        version: kyzzle@file:(zod@4.1.12)
+        version: kyzzle@file:(zod@3.25.76)
 
 packages:
 
@@ -219,7 +219,7 @@ packages:
   'kyzzle@file:':
     resolution: {directory: '', type: directory}
     peerDependencies:
-      zod: ^4
+      zod: ^3.25.0
 
   pg-cloudflare@1.2.7:
     resolution: {integrity: sha512-YgCtzMH0ptvZJslLM1ffsY4EuGaU0cx4XSdXLRFae8bPP4dS5xL1tNB3k2o/N64cHJpwU7dxKli/nZ2lUa5fLg==}
@@ -295,8 +295,8 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
-  zod@4.1.12:
-    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
@@ -426,9 +426,9 @@ snapshots:
 
   kysely@0.28.8: {}
 
-  kyzzle@file:(zod@4.1.12):
+  kyzzle@file:(zod@3.25.76):
     dependencies:
-      zod: 4.1.12
+      zod: 3.25.76
     optional: true
 
   pg-cloudflare@1.2.7:
@@ -493,4 +493,4 @@ snapshots:
 
   xtend@4.0.2: {}
 
-  zod@4.1.12: {}
+  zod@3.25.76: {}

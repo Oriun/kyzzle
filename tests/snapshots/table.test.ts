@@ -11,80 +11,40 @@ exports[`Create Table > should create a table 1`] = `
       "isNotNull": false,
       "isImmutable": false,
       "zodSchema": {
-        "~standard": {
-          "vendor": "zod",
-          "version": 1
-        },
-        "def": {
-          "type": "nullable",
+        "_def": {
           "innerType": {
-            "~standard": {
-              "vendor": "zod",
-              "version": 1
-            },
-            "def": {
-              "type": "pipe",
-              "in": {
+            "_def": {
+              "schema": {
+                "_def": {
+                  "checks": [
+                    {
+                      "kind": "uuid"
+                    }
+                  ],
+                  "typeName": "ZodString",
+                  "coerce": false
+                },
                 "~standard": {
-                  "vendor": "zod",
-                  "version": 1
-                },
-                "def": {
-                  "type": "string",
-                  "format": "uuid",
-                  "check": "string_format",
-                  "abort": false,
-                  "version": "v4",
-                  "pattern": {}
-                },
-                "type": "string",
-                "format": "uuid",
-                "minLength": null,
-                "maxLength": null
+                  "version": 1,
+                  "vendor": "zod"
+                }
               },
-              "out": {
-                "~standard": {
-                  "vendor": "zod",
-                  "version": 1
-                },
-                "def": {
-                  "type": "transform"
-                },
+              "typeName": "ZodEffects",
+              "effect": {
                 "type": "transform"
               }
             },
-            "type": "pipe",
-            "in": {
-              "~standard": {
-                "vendor": "zod",
-                "version": 1
-              },
-              "def": {
-                "type": "string",
-                "format": "uuid",
-                "check": "string_format",
-                "abort": false,
-                "version": "v4",
-                "pattern": {}
-              },
-              "type": "string",
-              "format": "uuid",
-              "minLength": null,
-              "maxLength": null
-            },
-            "out": {
-              "~standard": {
-                "vendor": "zod",
-                "version": 1
-              },
-              "def": {
-                "type": "transform"
-              },
-              "type": "transform"
+            "~standard": {
+              "version": 1,
+              "vendor": "zod"
             }
-          }
+          },
+          "typeName": "ZodNullable"
         },
-        "type": "nullable"
+        "~standard": {
+          "version": 1,
+          "vendor": "zod"
+        }
       }
     },
     "__brand": "TableColumn"
@@ -100,27 +60,24 @@ exports[`Create Table > should create a table 1`] = `
       "isNotNull": false,
       "isImmutable": false,
       "zodSchema": {
-        "~standard": {
-          "vendor": "zod",
-          "version": 1
-        },
-        "def": {
-          "type": "nullable",
+        "_def": {
           "innerType": {
+            "_def": {
+              "checks": [],
+              "typeName": "ZodString",
+              "coerce": false
+            },
             "~standard": {
-              "vendor": "zod",
-              "version": 1
-            },
-            "def": {
-              "type": "string"
-            },
-            "type": "string",
-            "format": null,
-            "minLength": null,
-            "maxLength": null
-          }
+              "version": 1,
+              "vendor": "zod"
+            }
+          },
+          "typeName": "ZodNullable"
         },
-        "type": "nullable"
+        "~standard": {
+          "version": 1,
+          "vendor": "zod"
+        }
       }
     },
     "__brand": "TableColumn"
