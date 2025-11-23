@@ -61,6 +61,10 @@ export const integer = <T extends string>(name: T) =>
 export const int4 = integer;
 export const int = integer;
 
+export const smallInt = <T extends string>(name: T) =>
+  new Integer(name, { size: 2 });
+export const int2 = smallInt;
+
 export const json = <T extends string, SchemaType extends ZodType>(
   name: T,
   schema: SchemaType,
@@ -231,14 +235,18 @@ export abstract class DataType<
   }
 }
 
-class Integer<T extends string, Size extends 4 | 8> extends DataType<
+class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   T,
-  Size extends 4 ? "integer" : "bigint"
+  Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint"
 > {
   constructor(name: T, parameters: { size: Size }) {
     const pgType = (
-      parameters.size === 4 ? "integer" : "bigint"
-    ) as Size extends 4 ? "integer" : "bigint";
+      parameters.size === 2
+        ? "smallint"
+        : parameters.size === 4
+          ? "integer"
+          : "bigint"
+    ) as Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint";
     super(name, pgType);
   }
 }
