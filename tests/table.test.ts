@@ -98,33 +98,63 @@ suite("Create Table", async () => {
       ] satisfies (keyof Kysely)[];
     });
     await test("should infer SELECT interface", (t: TestContext) => {
-      type CompaniesRow = Selectable<Kysely["professional.companies"]>;
-      const _validRow: CompaniesRow = {
-        id: randomUUID(),
-        name: "My Company",
-        updatedAt: new Date(),
-      };
-      const _invalidRow: CompaniesRow = {
+      type ManagerRow = Selectable<Kysely["professional.managers"]>;
+      const _validRow: ManagerRow[] = [
+        {
+          id: randomUUID(),
+          name: "My Company",
+          companyId: randomUUID(),
+          providerId: "pr-ovide-rid",
+          updatedAt: new Date(),
+        },
+        {
+          id: randomUUID(),
+          name: "My Company",
+          companyId: null,
+          providerId: null,
+          updatedAt: new Date(),
+        },
+      ];
+      const _invalidRow: ManagerRow = {
         // @ts-expect-error
         id: "not-a-uuid",
         // @ts-expect-error
         name: 42,
         // @ts-expect-error
         updatedAt: {},
+        // @ts-expect-error
+        companyId: 2,
+        // @ts-expect-error
+        providerId: false,
       };
-      type CompaniesRow2 = Selectable<ToTableType<typeof Companies>>;
-      const _validRow2: CompaniesRow2 = {
-        id: randomUUID(),
-        name: "My Company",
-        updatedAt: new Date(),
-      };
-      const _invalidRow2: CompaniesRow2 = {
+      type ManagerRow2 = Selectable<ToTableType<typeof Managers>>;
+      const _validRow2: ManagerRow2[] = [
+        {
+          id: randomUUID(),
+          name: "My Company",
+          companyId: randomUUID(),
+          providerId: "pr-ovide-rid",
+          updatedAt: new Date(),
+        },
+        {
+          id: randomUUID(),
+          name: "My Company",
+          companyId: null,
+          providerId: null,
+          updatedAt: new Date(),
+        },
+      ];
+      const _invalidRow2: ManagerRow2 = {
         // @ts-expect-error
         id: "not-a-uuid",
         // @ts-expect-error
         name: 42,
         // @ts-expect-error
         updatedAt: {},
+        // @ts-expect-error
+        companyId: 2,
+        // @ts-expect-error
+        providerId: false,
       };
     });
     await test("should infer INSERT interface", (t: TestContext) => {

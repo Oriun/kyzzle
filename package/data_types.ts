@@ -112,33 +112,43 @@ type ParametersWithTypeImpact = {
   isGeneratedAlways?: boolean;
 };
 const TypesToZod = {
-  text: string(),
-  varchar: string(),
-  char: string(),
+  text: string().nullable(),
+  varchar: string().nullable(),
+  char: string().nullable(),
   uuid: string()
     .uuid()
-    .transform((uuid) => uuid as UUID),
-  bigint: number(),
-  numeric: number(),
-  ["double precision"]: number(),
-  boolean: zodBoolean(),
-  integer: number(),
-  date: zodDate().or(
-    string()
-      .date()
-      .transform((date) => new Date(date)),
-  ),
-  timestamp: zodDate().or(
-    string()
-      .datetime()
-      .transform((date) => new Date(date)),
-  ),
-  timestamptz: zodDate().or(
-    string()
-      .datetime()
-      .transform((date) => new Date(date)),
-  ),
-  serial: number(),
+    .transform((uuid) => uuid as UUID)
+    .nullable(),
+  bigint: number().nullable(),
+  numeric: number().nullable(),
+  ["double precision"]: number().nullable(),
+  boolean: zodBoolean().nullable(),
+  integer: number().nullable(),
+  date: zodDate()
+    .or(
+      string()
+        .date()
+        .transform((date) => new Date(date))
+        .nullable(),
+    )
+    .nullable(),
+  timestamp: zodDate()
+    .or(
+      string()
+        .datetime()
+        .transform((date) => new Date(date))
+        .nullable(),
+    )
+    .nullable(),
+  timestamptz: zodDate()
+    .or(
+      string()
+        .datetime()
+        .transform((date) => new Date(date))
+        .nullable(),
+    )
+    .nullable(),
+  serial: number().nullable(),
 } as const satisfies Record<string, ZodType>;
 
 export abstract class DataType<
@@ -161,9 +171,8 @@ export abstract class DataType<
     public readonly name: T,
     public readonly pgType: PgType,
   ) {
-    this.zodSchema = (
-      TypesToZod[pgType as keyof typeof TypesToZod] ?? any()
-    ).nullable() as unknown as ZodschemaType;
+    this.zodSchema = (TypesToZod[pgType as keyof typeof TypesToZod] ??
+      any().nullable()) as unknown as ZodschemaType;
   }
   computeType(): string {
     return this.pgType;
