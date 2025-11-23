@@ -59,7 +59,7 @@ export function pgEnumType<
 
   if (!hasItems(values)) throw new Error(`Enum ${enumName} has no values`);
 
-  return Object.assign(custom(enumName, _enum(values)), {
+  return Object.assign(custom(enumName, _enum(values).nullable()), {
     enumName,
     values,
     __brand: "EnumType",
