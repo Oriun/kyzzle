@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "incremental": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": true,
+    "moduleResolution": "bundler",
+    "target": "ES2015",
+    "module": "es2015",
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "lib": ["esnext"],
+    "types": ["node"],
+    "outDir": "./dist",
+    "skipLibCheck": true
+  },
+  "exclude": ["dist", "tests"]
+}
