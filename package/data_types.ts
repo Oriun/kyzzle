@@ -108,6 +108,14 @@ export const timestamptz = <T extends string>(name: T) =>
 export const uuid = <T extends string>(name: T) =>
   new UnParametered(name, { type: "uuid" });
 
+export const custom =
+  <PgType extends string, SchemaType extends ZodType>(
+    type: PgType,
+    schema: SchemaType,
+  ) =>
+  <T extends string>(name: T) =>
+    new UserDefined(name, { type, schema });
+
 type ParametersWithTypeImpact = {
   isPrimaryKey?: boolean;
   isNotNull?: boolean;
@@ -344,5 +352,17 @@ class Numeric<T extends string> extends DataType<T, "numeric"> {
     if (this.precision === undefined && this.scale === undefined)
       return this.pgType;
     return `${this.pgType}(${[this.precision, this.scale].join(", ")})`;
+  }
+}
+
+export class UserDefined<
+  T extends string,
+  Type extends string,
+  Schema extends ZodType,
+> extends DataType<T, Type, Schema> {
+  public zodSchema: Schema;
+  constructor(name: T, parameters: { type: Type; schema: Schema }) {
+    super(name, parameters.type);
+    this.zodSchema = parameters.schema;
   }
 }

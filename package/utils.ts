@@ -103,3 +103,7 @@ function findFirstIdent(str: string) {
   }
   return firstIdent;
 }
+
+export function hasItems<T>(arr: T[]): arr is [T, ...T[]] {
+  return arr.length > 0;
+}

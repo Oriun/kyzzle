@@ -15,7 +15,21 @@ function serializeCreateTable(
   return sql`
     CREATE TABLE IF NOT EXISTS ${serializeName(tableName)} (
       ${[
-        ...columns.map((col) => `"${col.name}" ${col.type.computeType()}`),
+        ...columns.map(
+          (col) =>
+            `"${col.name}" ${[
+              col.type.computeType(),
+              col.type.isPrimaryKey && "PRIMARY KEY",
+              col.type.isNotNull && "NOT NULL",
+              col.type.defaultExpression &&
+                `DEFAULT (${col.type.defaultExpression})`,
+              col.type.generatedAlwaysExpression &&
+                `GENERATED ALWAYS AS (${col.type.generatedAlwaysExpression}) STORED`,
+              col.type.isUnique && "UNIQUE",
+            ]
+              .filter(Boolean)
+              .join(" ")}`,
+        ),
         ...constraints,
       ].join(",\n")}
     );

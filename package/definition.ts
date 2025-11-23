@@ -1,11 +1,12 @@
-import { DataType } from "./data_types";
+import { custom, DataType } from "./data_types";
 import type {
   PgTableColumnDefinition,
   PgIdentifier,
   PgTableConstraintsCallback,
   PgTableDefinition,
 } from "./types";
-import { entries, fromEntries, isValidIdentifier } from "./utils";
+import { entries, fromEntries, hasItems, isValidIdentifier } from "./utils";
+import { enum as _enum } from "zod";
 
 export function pgTable<
   TableName extends PgIdentifier,
@@ -42,6 +43,49 @@ export function pgTable<
     ]),
   );
   return table;
+}
+
+export function pgEnumType<
+  EnumName extends PgIdentifier,
+  Values extends string,
+>(enumName: EnumName, definition: Record<string, Values> | Values[]) {
+  if (!isValidIdentifier(enumName))
+    throw new Error(
+      `Invalid table name: ${enumName}. Please provide full reference like "public.users_type".`,
+    );
+  const values = Array.isArray(definition)
+    ? definition
+    : Object.values(definition);
+
+  if (!hasItems(values)) throw new Error(`Enum ${enumName} has no values`);
+
+  return Object.assign(custom(enumName, _enum(values)), {
+    enumName,
+    values,
+    __brand: "EnumType",
+  });
+}
+
+export function pgCompositeType<
+  CompositeTypeName extends PgIdentifier,
+  FieldsDefinition extends PgTableColumnDefinition,
+>(compositeTypeName: CompositeTypeName, definition: FieldsDefinition) {
+  if (!isValidIdentifier(compositeTypeName))
+    throw new Error(
+      `Invalid table name: ${compositeTypeName}. Please provide full reference like "public.users".`,
+    );
+
+  const fieldsDefinition = entries(definition);
+
+  if (!fieldsDefinition.length)
+    throw new Error(`Table ${compositeTypeName} has no columns`);
+  for (const [key, value] of fieldsDefinition)
+    if (!(value instanceof DataType))
+      throw new Error(
+        `Invalid column ${key}. Definition does not involve a DataType, example: "text(...)" or "integer(...)".`,
+      );
+
+  throw "Not implemented";
 }
 
 export function pgType() {}
