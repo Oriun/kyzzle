@@ -80,7 +80,12 @@ export type PgKnownKeywords =
   | "NOW()"
   | "uuid_generate_v4()"
   | "NULL";
-export type SQLExpression = PgKnownKeywords | (string & {});
+export type SQLExpression =
+  | PgKnownKeywords
+  | (string & {})
+  | number
+  | boolean
+  | TemplateStringsArray;
 
 export type TableColumn<
   Table extends PgIdentifier,

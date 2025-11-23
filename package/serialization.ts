@@ -22,9 +22,9 @@ function serializeCreateTable(
               col.type.isPrimaryKey && "PRIMARY KEY",
               col.type.isNotNull && "NOT NULL",
               col.type.defaultExpression &&
-                `DEFAULT (${col.type.defaultExpression})`,
+                `DEFAULT ${col.type.defaultExpression}`,
               col.type.generatedAlwaysExpression &&
-                `GENERATED ALWAYS AS (${col.type.generatedAlwaysExpression}) STORED`,
+                `GENERATED ALWAYS AS (${col.type.generatedAlwaysExpression.toString().replace(/^\(/, "").replace(/\)$/, "")}) STORED`,
               col.type.isUnique && "UNIQUE",
             ]
               .filter(Boolean)

@@ -7,9 +7,9 @@ import {
   ZodNullable,
   type ZodType,
 } from "zod";
-import type { PgKnownTypes, SQLExpression } from "./types";
+import type { PgKnownKeywords, PgKnownTypes, SQLExpression } from "./types";
 import type { UUID } from "node:crypto";
-import { isNullable } from "./utils";
+import { flatTemplateStringArray, isNullable } from "./utils";
 /*
 
 Subset of:
@@ -160,6 +160,12 @@ const TypesToZod = {
   serial: number().nullable(),
 } as const satisfies Record<string, ZodType>;
 
+export const pgKnownKeywords: Set<PgKnownKeywords> = new Set([
+  "CURRENT_TIMESTAMP",
+  "NOW()",
+  "uuid_generate_v4()",
+  "NULL",
+] as PgKnownKeywords[]);
 export abstract class DataType<
   T extends string,
   PgType extends PgKnownTypes | (string & {}),
@@ -209,8 +215,8 @@ export abstract class DataType<
     this.isPrimaryKey = true;
     return this.notNull();
   }
-  default(expression: SQLExpression) {
-    this.defaultExpression = expression;
+  default(expression: SQLExpression, ...args: any[]) {
+    this.defaultExpression = processExpression(expression, args);
     return this as unknown as DataType<
       T,
       PgType,
@@ -218,8 +224,8 @@ export abstract class DataType<
       Parameters & { hasDefault: true }
     >;
   }
-  generatedAlwaysAs(expression: SQLExpression) {
-    this.generatedAlwaysExpression = expression;
+  generatedAlwaysAs(expression: SQLExpression, ...args: any[]) {
+    this.generatedAlwaysExpression = processExpression(expression, args);
     this.isImmutable = true;
     return this as unknown as DataType<
       T,
@@ -249,6 +255,18 @@ export abstract class DataType<
     this.zodSchema = schema;
     return this as unknown as DataType<T, PgType, Z, Parameters>;
   }
+}
+
+function processExpression(expression: SQLExpression, args?: any[]) {
+  if (typeof expression === "object") {
+    console.log("pE", flatTemplateStringArray(expression, args));
+    return `(${flatTemplateStringArray(expression, args)})`;
+  }
+  return typeof expression === "string" &&
+    !pgKnownKeywords.has(expression as PgKnownKeywords) &&
+    !(expression.startsWith("'") && expression.endsWith("'"))
+    ? `'${expression}'`
+    : expression;
 }
 
 class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<

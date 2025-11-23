@@ -65,6 +65,13 @@ export function filterFalsy<T>(array: T[]): T[] {
   return array.filter(Boolean) as Exclude<T, null | undefined>[];
 }
 
+export function flatTemplateStringArray(
+  template: TemplateStringsArray,
+  ...args: any[]
+) {
+  return template.reduce((acc, str, i) => acc + str + args[i], "");
+}
+
 export function sql(template: TemplateStringsArray, ...args: any[]) {
   if (!template[0]) return "";
   const firstIndent = findFirstIdent(template[0]);
