@@ -16,7 +16,7 @@
     "build:test": "tsc -p tsconfig.test.json",
     "prepare": "tsc",
     "pretest": "pnpm install && pnpm build:test",
-    "test": "tsx --watch tests/*.test.ts",
+    "test": "tsx --test --watch tests/*.test.ts",
     "test:ci": "tsx tests/*.test.ts"
   },
   "keywords": [],

@@ -92,7 +92,7 @@ export type TableColumn<
   table: Table;
   name: Name;
   type: DataType<Name, PgType, ZodSchemaType, ParametersType>;
-  __brand: "TableColumn";
+  __brand?: "TableColumn";
 };
 
 export type StripImpossibleProps<T> = {

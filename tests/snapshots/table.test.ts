@@ -46,8 +46,7 @@ exports[`Create Table > should create a table 1`] = `
           "vendor": "zod"
         }
       }
-    },
-    "__brand": "TableColumn"
+    }
   },
   "name": {
     "name": "name",
@@ -79,8 +78,7 @@ exports[`Create Table > should create a table 1`] = `
           "vendor": "zod"
         }
       }
-    },
-    "__brand": "TableColumn"
+    }
   }
 }
 `;

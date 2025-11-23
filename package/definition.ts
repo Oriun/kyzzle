@@ -32,20 +32,27 @@ export function pgTable<
       );
 
   const table = fromEntries(
-    columnsDefinition.map(([key, value]) => [
-      key,
-      {
+    columnsDefinition.map(([key, value]) => {
+      const col = {
         name: value.name,
         table: tableName,
         type: value,
-        __brand: "TableColumn",
-      } as const,
-    ]),
+      } as const;
+      return [
+        key,
+        Object.defineProperty(col, "__brand", {
+          value: "TableColumn",
+          writable: false,
+          enumerable: false,
+        }),
+      ];
+    }),
   );
-  return {
-    ...table,
-    __brand: "Table",
-  };
+  return Object.defineProperty(table, "__brand", {
+    value: "Table",
+    writable: false,
+    enumerable: false,
+  });
 }
 
 export function pgEnumType<
@@ -62,11 +69,14 @@ export function pgEnumType<
 
   if (!hasItems(values)) throw new Error(`Enum ${enumName} has no values`);
 
-  return Object.assign(custom(enumName, _enum(values).nullable()), {
-    enumName,
-    values,
-    __brand: "EnumType",
-  });
+  return Object.defineProperty(
+    Object.assign(custom(enumName, _enum(values).nullable()), {
+      enumName,
+      values,
+    }),
+    "__brand",
+    "EnumType",
+  );
 }
 
 export function pgCompositeType<
