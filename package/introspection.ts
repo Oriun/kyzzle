@@ -251,7 +251,7 @@ export async function listTableItems(
     .parse(rows)[0];
 }
 
-export async function listeCompositeTypeItems(
+export async function listCompositeTypeItems(
   type: PgIdentifier,
   executor: { query(q: string, params: string[]): Promise<{ rows: any[] }> },
 ) {
@@ -318,6 +318,36 @@ export async function listeCompositeTypeItems(
       ordinal_position: number(),
     }).array(),
     constraints: object({}).passthrough().array().nullable(),
+  })
+    .array()
+    .parse(rows);
+}
+
+export async function listEnumTypeItems(
+  type: PgIdentifier,
+  executor: { query(q: string, params: string[]): Promise<{ rows: any[] }> },
+) {
+  const query = sql`
+      SELECT
+        n.nspname       AS type_schema,
+        t.typname       AS type_name,
+        e.enumsortorder AS ordinal_position,
+        e.enumlabel     AS enum_value
+      FROM pg_type t
+      JOIN pg_enum e      ON t.oid = e.enumtypid
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+      WHERE t.typname = $2
+        AND n.nspname = $1
+      ORDER BY e.enumsortorder;
+    `;
+
+  const { rows } = await executor.query(query, type.split("."));
+
+  return object({
+    type_schema: string(),
+    type_name: string(),
+    ordinal_position: number(),
+    enum_value: string(),
   })
     .array()
     .parse(rows);
