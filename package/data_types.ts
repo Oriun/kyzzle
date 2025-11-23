@@ -241,6 +241,14 @@ export abstract class DataType<
       Parameters & { isImmutable: true }
     >;
   }
+  /**
+   * Note: Schema is taken as-is, nullability is not automatically applied back
+   */
+  override<Z extends ZodType>(schema: Z) {
+    // @ts-ignore
+    this.zodSchema = schema;
+    return this as unknown as DataType<T, PgType, Z, Parameters>;
+  }
 }
 
 class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
