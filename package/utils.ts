@@ -69,7 +69,17 @@ export function flatTemplateStringArray(
   template: TemplateStringsArray,
   ...args: any[]
 ) {
-  return template.reduce((acc, str, i) => acc + str + args[i], "");
+  return template.reduce(
+    (acc, str, i) =>
+      acc +
+      str +
+      (args[i] && typeof args[i] === "object"
+        ? JSON.stringify(args[i])
+        : args[i] === undefined
+          ? ""
+          : args[i]),
+    "",
+  );
 }
 
 export function sql(template: TemplateStringsArray, ...args: any[]) {
@@ -87,7 +97,13 @@ export function sql(template: TemplateStringsArray, ...args: any[]) {
         const currentContent = [...previousLines, ...parts];
         const lastLine = currentContent.pop()!;
         const lastPartIndent = findFirstIdent(lastLine);
-        const argsParts = ((lastLine + (args[i] || "").toString()) as string)
+        const argsParts = (
+          lastLine +
+          (args[i] && typeof args[i] === "object"
+            ? `'${JSON.stringify(args[i])}'`
+            : args[i] || "")
+        )
+          .toString()
           .split("\n")
           .map((s) =>
             s.startsWith(" ") ? s : " ".repeat(lastPartIndent ?? 0) + s,

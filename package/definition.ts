@@ -1,13 +1,94 @@
-import { custom, DataType } from "./data_types";
+import { DataType, UserDefined, custom } from "./data_types";
 import type {
+  PgCompositeTypeDefinition,
   PgTableColumnDefinition,
   PgIdentifier,
   PgTableConstraintsCallback,
   PgTableDefinition,
+  SelectShema,
+  SQLExpression,
 } from "./types";
-import { entries, fromEntries, hasItems, isValidIdentifier } from "./utils";
-import { enum as _enum } from "zod";
+import {
+  entries,
+  fromEntries,
+  hasItems,
+  isObject,
+  isValidIdentifier,
+} from "./utils";
+import { enum as _enum, object, type output, type ZodType } from "zod";
 
+type CompositeDefaultInput<FieldsDefinition extends PgTableColumnDefinition> =
+  Partial<{
+    [key in keyof FieldsDefinition & string]: output<
+      FieldsDefinition[key]["zodSchema"]
+    >;
+  }>;
+
+class CompositeUserDefined<
+  Name extends string,
+  CompositeName extends PgIdentifier,
+  Schema extends ZodType,
+  FieldsDefinition extends PgTableColumnDefinition,
+> extends UserDefined<
+  Name,
+  CompositeName,
+  Schema,
+  {},
+  CompositeDefaultInput<FieldsDefinition> | SQLExpression
+> {
+  private readonly _defaultReturn!: CompositeUserDefined<
+    Name,
+    CompositeName,
+    Schema,
+    FieldsDefinition
+  > &
+    DataType<
+      Name,
+      CompositeName,
+      Schema,
+      { hasDefault: true },
+      CompositeDefaultInput<FieldsDefinition> | SQLExpression
+    >;
+  constructor(
+    name: Name,
+    parameters: { type: CompositeName; schema: Schema },
+    public readonly meta: {
+      compositeTypeName: CompositeName;
+      defaultInputSchema: ZodType<Record<string, unknown>>;
+    },
+  ) {
+    super(name, parameters);
+  }
+
+  default(
+    expression: CompositeDefaultInput<FieldsDefinition> | SQLExpression,
+    ...args: any[]
+  ): typeof this._defaultReturn {
+    const { defaultInputSchema, compositeTypeName } = this.meta;
+    const isPlainObject =
+      isObject(expression) &&
+      !Array.isArray(expression) &&
+      Object.getPrototypeOf(expression) === Object.prototype;
+
+    if (isPlainObject) {
+      const parsed = defaultInputSchema.safeParse(expression);
+      if (!parsed.success)
+        throw new Error(
+          `Invalid default value for composite type ${compositeTypeName}: ${parsed.error.message}`,
+        );
+      const normalized = parsed.data;
+
+      const jsonPayload = JSON.stringify(normalized).replace(/'/g, "''");
+      this.defaultExpression = `jsonb_populate_record(NULL::${compositeTypeName}, '${jsonPayload}'::jsonb)`;
+      return this as unknown as typeof this._defaultReturn;
+    }
+
+    return super.default(
+      expression as SQLExpression,
+      ...args,
+    ) as unknown as typeof this._defaultReturn;
+  }
+}
 export function pgTable<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
@@ -89,20 +170,102 @@ export function pgCompositeType<
 >(compositeTypeName: CompositeTypeName, definition: FieldsDefinition) {
   if (!isValidIdentifier(compositeTypeName))
     throw new Error(
-      `Invalid table name: ${compositeTypeName}. Please provide full reference like "public.users".`,
+      `Invalid type name: ${compositeTypeName}. Please provide full reference like "public.users".`,
     );
 
   const fieldsDefinition = entries(definition);
 
   if (!fieldsDefinition.length)
-    throw new Error(`Table ${compositeTypeName} has no columns`);
+    throw new Error(`Composite type ${compositeTypeName} has no fields`);
   for (const [key, value] of fieldsDefinition)
     if (!(value instanceof DataType))
       throw new Error(
-        `Invalid column ${key}. Definition does not involve a DataType, example: "text(...)" or "integer(...)".`,
+        `Invalid field ${key}. Definition does not involve a DataType, example: "text(...)" or "integer(...)".`,
       );
 
-  throw "Not implemented";
+  const fields = fromEntries(
+    fieldsDefinition.map(([key, value]) => {
+      const field = {
+        name: value.name,
+        compositeType: compositeTypeName,
+        type: value,
+      } as const;
+      return [
+        key,
+        Object.defineProperty(field, "__brand", {
+          value: "CompositeTypeField",
+          writable: false,
+          enumerable: false,
+        }),
+      ];
+    }),
+  ) as PgCompositeTypeDefinition<CompositeTypeName, FieldsDefinition>;
+
+  const schema = object<SelectShema<FieldsDefinition>>(
+    fromEntries(
+      fieldsDefinition.map(([key, value]) => [key, value.zodSchema]),
+    ) as SelectShema<FieldsDefinition>,
+  ).nullable();
+
+  const defaultInputShape: Record<string, ReturnType<ZodType["optional"]>> = {};
+  for (const [key, value] of fieldsDefinition) {
+    const optionalSchema = value.zodSchema.optional();
+    defaultInputShape[key] = optionalSchema;
+    if (value.name !== key) defaultInputShape[value.name] = optionalSchema;
+  }
+  const defaultInputSchema = object(defaultInputShape)
+    .strict()
+    .transform((val) => {
+      const normalized: Record<string, unknown> = {};
+      for (const [key, value] of fieldsDefinition) {
+        const fromCode = (val as Record<string, unknown>)[key];
+        const fromDb = (val as Record<string, unknown>)[value.name];
+        const chosen =
+          fromCode !== undefined
+            ? fromCode
+            : fromDb !== undefined
+              ? fromDb
+              : undefined;
+        if (chosen !== undefined) normalized[value.name] = chosen;
+      }
+      return normalized;
+    });
+
+  const composite = (<T extends string>(name: T) =>
+    new CompositeUserDefined<
+      T,
+      CompositeTypeName,
+      typeof schema,
+      FieldsDefinition
+    >(
+      name,
+      { type: compositeTypeName, schema },
+      {
+        compositeTypeName,
+        defaultInputSchema,
+      },
+    )) as <T extends string>(
+    name: T,
+  ) => CompositeUserDefined<
+    T,
+    CompositeTypeName,
+    typeof schema,
+    FieldsDefinition
+  >;
+
+  return Object.defineProperty(
+    Object.assign(composite, {
+      ...fields,
+      fields,
+      compositeTypeName,
+    }),
+    "__brand",
+    {
+      value: "CompositeType",
+      writable: false,
+      enumerable: false,
+    },
+  );
 }
 
 export function pgType() {}

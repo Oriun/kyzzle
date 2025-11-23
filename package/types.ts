@@ -17,7 +17,7 @@ export type PgTableDefinition<
     ColumnDefinition[key]["name"],
     ColumnDefinition[key]["pgType"],
     ColumnDefinition[key]["zodSchema"],
-    ColumnDefinition[key] extends DataType<any, any, any, infer Parameters>
+    ColumnDefinition[key] extends DataType<any, any, any, infer Parameters, any>
       ? Parameters
       : {}
   >;
@@ -29,7 +29,13 @@ export type SelectShema<ColumnDefinition extends PgTableColumnDefinition> = {
 export type InsertShema<ColumnDefinition extends PgTableColumnDefinition> =
   StripImpossibleProps<{
     [key in keyof ColumnDefinition &
-      string]: ColumnDefinition[key] extends DataType<any, any, any, infer T>
+      string]: ColumnDefinition[key] extends DataType<
+      any,
+      any,
+      any,
+      infer T,
+      any
+    >
       ? T extends { isGeneratedAlways: true }
         ? never
         : ColumnDefinition[key]["zodSchema"]
@@ -38,7 +44,13 @@ export type InsertShema<ColumnDefinition extends PgTableColumnDefinition> =
 export type UpdateShema<ColumnDefinition extends PgTableColumnDefinition> =
   StripImpossibleProps<{
     [key in keyof ColumnDefinition &
-      string]: ColumnDefinition[key] extends DataType<any, any, any, infer T>
+      string]: ColumnDefinition[key] extends DataType<
+      any,
+      any,
+      any,
+      infer T,
+      any
+    >
       ? T extends { isImmutable: true } | { isGeneratedAlways: true }
         ? never
         : ColumnDefinition[key]["zodSchema"] extends ZodOptional<ZodType>
@@ -96,8 +108,36 @@ export type TableColumn<
 > = {
   table: Table;
   name: Name;
-  type: DataType<Name, PgType, ZodSchemaType, ParametersType>;
+  type: DataType<Name, PgType, ZodSchemaType, ParametersType, any>;
   __brand?: "TableColumn";
+};
+
+export type CompositeTypeField<
+  Composite extends PgIdentifier,
+  Name extends string,
+  PgType extends PgKnownTypes | (string & {}),
+  ZodSchemaType extends ZodType,
+  ParametersType extends {},
+> = {
+  compositeType: Composite;
+  name: Name;
+  type: DataType<Name, PgType, ZodSchemaType, ParametersType, any>;
+  __brand?: "CompositeTypeField";
+};
+
+export type PgCompositeTypeDefinition<
+  CompositeName extends PgIdentifier,
+  FieldsDefinition extends PgTableColumnDefinition,
+> = {
+  [key in keyof FieldsDefinition & string]: CompositeTypeField<
+    CompositeName,
+    FieldsDefinition[key]["name"],
+    FieldsDefinition[key]["pgType"],
+    FieldsDefinition[key]["zodSchema"],
+    FieldsDefinition[key] extends DataType<any, any, any, infer Parameters>
+      ? Parameters
+      : {}
+  >;
 };
 
 export type StripImpossibleProps<T> = {
@@ -117,7 +157,7 @@ export type MergeUnionOptional<U> = {
 };
 
 export type ToColumnType<Type extends DataType<any, any, any>> =
-  Type extends DataType<any, any, infer ZodSchemaType, infer Parameters>
+  Type extends DataType<any, any, infer ZodSchemaType, infer Parameters, any>
     ? ColumnType<
         output<ZodSchemaType>,
         Parameters extends { isGeneratedAlways: true }

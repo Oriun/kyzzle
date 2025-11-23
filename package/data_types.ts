@@ -174,6 +174,7 @@ export abstract class DataType<
     ? (typeof TypesToZod)[PgType]
     : ZodType,
   Parameters extends ParametersWithTypeImpact = {},
+  DefaultType = SQLExpression,
 > {
   public isPrimaryKey: boolean = false;
   public isUnique: boolean = false;
@@ -204,24 +205,38 @@ export abstract class DataType<
           ? S
           : ZodschemaType
         : ZodschemaType,
-      Parameters & { isNotNull: true }
+      Parameters & { isNotNull: true },
+      DefaultType
     >;
   }
   unique() {
     this.isUnique = true;
-    return this;
+    return this as unknown as DataType<
+      T,
+      PgType,
+      ZodschemaType,
+      Parameters,
+      DefaultType
+    >;
   }
   primaryKey() {
     this.isPrimaryKey = true;
     return this.notNull();
   }
-  default(expression: SQLExpression, ...args: any[]) {
-    this.defaultExpression = processExpression(expression, args);
+  default<TExpression extends SQLExpression | DefaultType>(
+    expression: TExpression,
+    ...args: any[]
+  ) {
+    this.defaultExpression = processExpression(
+      expression as SQLExpression,
+      args,
+    );
     return this as unknown as DataType<
       T,
       PgType,
       ZodschemaType,
-      Parameters & { hasDefault: true }
+      Parameters & { hasDefault: true },
+      DefaultType
     >;
   }
   generatedAlwaysAs(expression: SQLExpression, ...args: any[]) {
@@ -235,7 +250,8 @@ export abstract class DataType<
           ? S
           : ZodschemaType
         : ZodschemaType,
-      Parameters & { isImmutable: true; isGeneratedAlways: true }
+      Parameters & { isImmutable: true; isGeneratedAlways: true },
+      DefaultType
     >;
   }
   immutable() {
@@ -244,7 +260,8 @@ export abstract class DataType<
       T,
       PgType,
       ZodschemaType,
-      Parameters & { isImmutable: true }
+      Parameters & { isImmutable: true },
+      DefaultType
     >;
   }
   /**
@@ -253,20 +270,21 @@ export abstract class DataType<
   override<Z extends ZodType>(schema: Z) {
     // @ts-ignore
     this.zodSchema = schema;
-    return this as unknown as DataType<T, PgType, Z, Parameters>;
+    return this as unknown as DataType<T, PgType, Z, Parameters, DefaultType>;
   }
 }
 
 function processExpression(expression: SQLExpression, args?: any[]) {
-  if (typeof expression === "object") {
-    console.log("pE", flatTemplateStringArray(expression, args));
-    return `(${flatTemplateStringArray(expression, args)})`;
+  if (Array.isArray(expression)) {
+    return `(${flatTemplateStringArray(expression as TemplateStringsArray, ...(args ?? []))})`;
   }
   return typeof expression === "string" &&
     !pgKnownKeywords.has(expression as PgKnownKeywords) &&
     !(expression.startsWith("'") && expression.endsWith("'"))
     ? `'${expression}'`
-    : expression;
+    : typeof expression === "object"
+      ? `'${JSON.stringify(expression)}'`
+      : expression;
 }
 
 class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
@@ -385,7 +403,9 @@ export class UserDefined<
   T extends string,
   Type extends string,
   Schema extends ZodType,
-> extends DataType<T, Type, Schema> {
+  Parameters extends ParametersWithTypeImpact = {},
+  DefaultType = SQLExpression,
+> extends DataType<T, Type, Schema, Parameters, DefaultType> {
   public zodSchema: Schema;
   constructor(name: T, parameters: { type: Type; schema: Schema }) {
     super(name, parameters.type);
