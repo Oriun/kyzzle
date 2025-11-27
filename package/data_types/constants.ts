@@ -4,9 +4,23 @@ import {
   string,
   boolean as zodBoolean,
   type ZodType,
+  preprocess,
 } from "zod";
 import type { PgKnownKeywords } from "../types";
 import type { UUID } from "node:crypto";
+
+const safeDateTime = preprocess((v) => {
+  const parsing = zodDate()
+    .or(
+      string()
+        .datetime()
+        .transform((date) => new Date(date)),
+    )
+    .safeParse(v);
+
+  if (parsing.success) return parsing.data;
+  return undefined;
+}, zodDate());
 
 export const TypesToZod = {
   text: string(),
@@ -20,21 +34,9 @@ export const TypesToZod = {
   ["double precision"]: number(),
   boolean: zodBoolean(),
   integer: number(),
-  date: zodDate().or(
-    string()
-      .date()
-      .transform((date) => new Date(date)),
-  ),
-  timestamp: zodDate().or(
-    string()
-      .datetime()
-      .transform((date) => new Date(date)),
-  ),
-  timestamptz: zodDate().or(
-    string()
-      .datetime()
-      .transform((date) => new Date(date)),
-  ),
+  date: safeDateTime,
+  timestamp: safeDateTime,
+  timestamptz: safeDateTime,
   serial: number(),
 } as const satisfies Record<string, ZodType>;
 
