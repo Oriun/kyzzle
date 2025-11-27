@@ -26,6 +26,7 @@ export abstract class DataType<
   public defaultExpression?: SQLExpression = undefined;
   public generatedAlwaysExpression?: SQLExpression = undefined;
   public zodSchema: ZodschemaType;
+  public constraints: { type: string; definition: string }[] = [];
   constructor(
     public readonly name: T,
     public readonly pgType: PgType,

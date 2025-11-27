@@ -104,10 +104,11 @@ export class UnParametered<
 export class Numeric<T extends string> extends DataType<T, "numeric"> {
   public precision?: number;
   public scale?: number;
-  public minExclusive?: SQLExpression;
-  public maxExclusive?: SQLExpression;
-  public minInclusive?: SQLExpression;
-  public maxInclusive?: SQLExpression;
+  public minExclusive?: number;
+  public maxExclusive?: number;
+  public minInclusive?: number;
+  public maxInclusive?: number;
+  public divisibleBy?: number;
   constructor(
     name: T,
     parameters: { precision?: number; scale?: number } = {},
@@ -121,20 +122,61 @@ export class Numeric<T extends string> extends DataType<T, "numeric"> {
       return this.pgType;
     return `${this.pgType}(${[this.precision, this.scale].join(", ")})`;
   }
-  gt(value: SQLExpression) {
+  gt(value: number) {
     this.minExclusive = value;
+    this.zodSchema = this.zodSchema.gt(value);
     return this;
   }
-  lt(value: SQLExpression) {
+  lt(value: number) {
     this.maxExclusive = value;
+    this.zodSchema = this.zodSchema.lt(value);
     return this;
   }
-  gte(value: SQLExpression) {
+  gte(value: number) {
     this.minInclusive = value;
+    this.zodSchema = this.zodSchema.gte(value);
     return this;
   }
-  lte(value: SQLExpression) {
+  lte(value: number) {
     this.maxInclusive = value;
+    this.zodSchema = this.zodSchema.lte(value);
+    return this;
+  }
+  nonnegative() {
+    this.zodSchema = this.zodSchema.nonnegative();
+    this.minInclusive = 0;
+    this.minExclusive = undefined;
+    this.maxExclusive = undefined;
+    this.maxInclusive = undefined;
+    return this;
+  }
+  nonpositive() {
+    this.zodSchema = this.zodSchema.nonpositive();
+    this.maxInclusive = 0;
+    this.maxExclusive = undefined;
+    this.minExclusive = undefined;
+    this.minInclusive = undefined;
+    return this;
+  }
+  positive() {
+    this.zodSchema = this.zodSchema.positive();
+    this.minExclusive = 0;
+    this.minInclusive = undefined;
+    this.maxExclusive = undefined;
+    this.maxInclusive = undefined;
+    return this;
+  }
+  negative() {
+    this.zodSchema = this.zodSchema.negative();
+    this.maxExclusive = 0;
+    this.maxInclusive = undefined;
+    this.minExclusive = undefined;
+    this.minInclusive = undefined;
+    return this;
+  }
+  multipleOf(value: number) {
+    this.zodSchema = this.zodSchema.multipleOf(value);
+    this.divisibleBy = value;
     return this;
   }
 }

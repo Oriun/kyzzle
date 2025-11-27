@@ -29,11 +29,11 @@ export const TypesToZod = {
   uuid: string()
     .uuid()
     .transform((uuid) => uuid as UUID),
-  bigint: number(),
+  bigint: number().int(),
   numeric: number(),
   ["double precision"]: number(),
   boolean: zodBoolean(),
-  integer: number(),
+  integer: number().int(),
   date: safeDateTime,
   timestamp: safeDateTime,
   timestamptz: safeDateTime,
