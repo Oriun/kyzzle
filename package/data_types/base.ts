@@ -108,12 +108,12 @@ export abstract class DataType<
       DefaultType
     >;
   }
-  /**
-   * Note: Schema is taken as-is, nullability is not automatically applied back
-   */
-  override<Z extends ZodType>(schema: Z) {
+  override<Z extends ZodType>(
+    schema: Z | ((currentSchema: ZodschemaType) => Z),
+  ) {
     // @ts-ignore
-    this.zodSchema = schema;
+    this.zodSchema =
+      typeof schema === "function" ? schema(this.zodSchema) : schema;
     return this as unknown as DataType<T, PgType, Z, Parameters, DefaultType>;
   }
 }
