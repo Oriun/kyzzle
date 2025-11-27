@@ -212,7 +212,7 @@ suite("Create Enum", async () => {
 
     await suite("SELECT schema", async () => {
       const selectUser = selectSchema(Users);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -230,15 +230,16 @@ suite("Create Enum", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(selectUser.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(selectUser.safeParse(scenarios[idx]), {
+                success: true,
+                data: scenarios[idx],
+              }),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -277,18 +278,19 @@ suite("Create Enum", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              selectUser.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                selectUser.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
 
     await suite("INSERT schema", async () => {
       const insertUser = insertSchema(Users);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -309,15 +311,16 @@ suite("Create Enum", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(insertUser.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(insertUser.safeParse(scenarios[idx]), {
+                success: true,
+                data: scenarios[idx],
+              }),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -343,18 +346,19 @@ suite("Create Enum", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              insertUser.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                insertUser.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
 
     await suite("UPDATE schema", async () => {
       const updateUser = updateSchema(Users);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           { role: "ADMIN" },
           { status: "ACTIVE" },
@@ -363,15 +367,16 @@ suite("Create Enum", async () => {
           {},
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(updateUser.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(updateUser.safeParse(scenarios[idx]), {
+                success: true,
+                data: scenarios[idx],
+              }),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             role: "OWNER",
@@ -384,12 +389,13 @@ suite("Create Enum", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              updateUser.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                updateUser.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
   });

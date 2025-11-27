@@ -347,7 +347,7 @@ suite("Create Composite Type", async () => {
 
     await suite("SELECT schema", async () => {
       const selectLocation = selectSchema(Locations);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -367,15 +367,19 @@ suite("Create Composite Type", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(selectLocation.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(
+                selectLocation.safeParse(scenarios[idx]),
+                {
+                  success: true,
+                  data: scenarios[idx],
+                },
+              ),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -397,18 +401,19 @@ suite("Create Composite Type", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              selectLocation.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                selectLocation.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
 
     await suite("INSERT schema", async () => {
       const insertLocation = insertSchema(Locations);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -433,15 +438,19 @@ suite("Create Composite Type", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(insertLocation.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(
+                insertLocation.safeParse(scenarios[idx]),
+                {
+                  success: true,
+                  data: scenarios[idx],
+                },
+              ),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             id: randomUUID(),
@@ -465,18 +474,19 @@ suite("Create Composite Type", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              insertLocation.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                insertLocation.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
 
     await suite("UPDATE schema", async () => {
       const updateLocation = updateSchema(Locations);
-      await test("should parse valid values", (t: TestContext) => {
+      await test("should parse valid values", async (t: TestContext) => {
         const scenarios = [
           { name: "HQ" },
           { coordinates: { latitude: 1, longitude: 2, label: null } },
@@ -487,15 +497,19 @@ suite("Create Composite Type", async () => {
           {},
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.deepStrictEqual(updateLocation.safeParse(scenarios[idx]), {
-              success: true,
-              data: scenarios[idx],
-            }),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.deepStrictEqual(
+                updateLocation.safeParse(scenarios[idx]),
+                {
+                  success: true,
+                  data: scenarios[idx],
+                },
+              ),
+            ));
       });
 
-      await test("should reject invalid values", (t: TestContext) => {
+      await test("should reject invalid values", async (t: TestContext) => {
         const scenarios = [
           {
             coordinates: null,
@@ -509,12 +523,13 @@ suite("Create Composite Type", async () => {
           },
         ] as const;
         for (const idx in scenarios)
-          t.assert.doesNotThrow(() =>
-            t.assert.partialDeepStrictEqual(
-              updateLocation.safeParse(scenarios[idx]),
-              { success: false },
-            ),
-          );
+          await test(`scenario n°${1 + +idx}`, (t: TestContext) =>
+            t.assert.doesNotThrow(() =>
+              t.assert.partialDeepStrictEqual(
+                updateLocation.safeParse(scenarios[idx]),
+                { success: false },
+              ),
+            ));
       });
     });
   });

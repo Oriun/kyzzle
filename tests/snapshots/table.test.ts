@@ -11,6 +11,7 @@ exports[`Create Table > should create a table 1`] = `
       "isNotNull": false,
       "isImmutable": false,
       "isArray": false,
+      "constraints": [],
       "zodSchema": {
         "_def": {
           "schema": {
@@ -51,6 +52,7 @@ exports[`Create Table > should create a table 1`] = `
       "isNotNull": false,
       "isImmutable": false,
       "isArray": false,
+      "constraints": [],
       "zodSchema": {
         "_def": {
           "checks": [],
