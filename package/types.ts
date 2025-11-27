@@ -1,5 +1,5 @@
-import type { output, ZodOptional, ZodType } from "zod";
-import type { DataType } from "./data_types";
+import type { output, ZodNullable, ZodOptional, ZodType } from "zod";
+import type { DataType } from "./data_types/base";
 import type { ColumnType } from "kysely";
 /**
  * Represents a PostgreSQL identifier in the format "schema.table".
@@ -23,39 +23,64 @@ export type PgTableDefinition<
   >;
 };
 
-export type SelectShema<ColumnDefinition extends PgTableColumnDefinition> = {
-  [key in keyof ColumnDefinition & string]: ColumnDefinition[key]["zodSchema"];
+export interface ParametersWithTypeImpact {
+  isPrimaryKey?: boolean;
+  isNotNull?: boolean;
+  isImmutable?: boolean;
+  hasDefault?: boolean;
+  isGeneratedAlways?: boolean;
+}
+
+export type SelectSchema<ColumnDefinition extends PgTableColumnDefinition> = {
+  [key in keyof ColumnDefinition &
+    string]: ColumnDefinition[key] extends DataType<
+    any,
+    any,
+    infer ZodSchema,
+    infer Parameters,
+    any
+  >
+    ? Parameters extends { isNotNull: true }
+      ? ZodSchema
+      : ZodNullable<ZodSchema>
+    : never;
 };
-export type InsertShema<ColumnDefinition extends PgTableColumnDefinition> =
+export type InsertSchema<ColumnDefinition extends PgTableColumnDefinition> =
   StripImpossibleProps<{
     [key in keyof ColumnDefinition &
       string]: ColumnDefinition[key] extends DataType<
       any,
       any,
-      any,
-      infer T,
+      infer ZodSchema,
+      infer Parameters,
       any
     >
-      ? T extends { isGeneratedAlways: true }
+      ? Parameters extends { isGeneratedAlways: true }
         ? never
-        : ColumnDefinition[key]["zodSchema"]
+        : Parameters extends { isNotNull: true }
+          ? ZodNullable<ZodSchema>
+          : ZodSchema
       : never;
   }>;
-export type UpdateShema<ColumnDefinition extends PgTableColumnDefinition> =
+export type UpdateSchema<ColumnDefinition extends PgTableColumnDefinition> =
   StripImpossibleProps<{
     [key in keyof ColumnDefinition &
       string]: ColumnDefinition[key] extends DataType<
       any,
       any,
-      any,
-      infer T,
+      infer ZodSchema,
+      infer Parameters,
       any
     >
-      ? T extends { isImmutable: true } | { isGeneratedAlways: true }
+      ? Parameters extends { isImmutable: true } | { isGeneratedAlways: true }
         ? never
-        : ColumnDefinition[key]["zodSchema"] extends ZodOptional<ZodType>
-          ? ColumnDefinition[key]["zodSchema"]
-          : ZodOptional<ColumnDefinition[key]["zodSchema"]>
+        : ZodSchema extends ZodOptional<ZodType>
+          ? Parameters extends { isNotNull: true }
+            ? ZodNullable<ZodSchema>
+            : ZodSchema
+          : Parameters extends { isNotNull: true }
+            ? ZodOptional<ZodNullable<ZodSchema>>
+            : ZodOptional<ZodSchema>
       : never;
   }>;
 
@@ -159,7 +184,9 @@ export type MergeUnionOptional<U> = {
 export type ToColumnType<Type extends DataType<any, any, any>> =
   Type extends DataType<any, any, infer ZodSchemaType, infer Parameters, any>
     ? ColumnType<
-        output<ZodSchemaType>,
+        Parameters extends { isNotNull: true }
+          ? output<ZodSchemaType>
+          : output<ZodNullable<ZodSchemaType>>,
         Parameters extends { isGeneratedAlways: true }
           ? never
           : Parameters extends { isNotNull: true }
@@ -169,7 +196,9 @@ export type ToColumnType<Type extends DataType<any, any, any>> =
             : output<ZodSchemaType> | null | undefined,
         Parameters extends { isImmutable: true } | { isGeneratedAlways: true }
           ? { _: "can't update this field" }
-          : output<ZodSchemaType>
+          : Parameters extends { isNotNull: true }
+            ? output<ZodSchemaType>
+            : output<ZodNullable<ZodSchemaType>>
       >
     : never;
 export type ToTableType<Table extends PgTableDefinition<any, any>> = {

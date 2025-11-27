@@ -1,5 +1,6 @@
 import {
   DataType,
+  type ToTableType,
   bool,
   insertSchema,
   integer,
@@ -14,7 +15,7 @@ import {
 import { randomBytes, randomUUID } from "node:crypto";
 import { suite, test, type TestContext } from "node:test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
-import { type output, string } from "zod";
+import { string } from "zod";
 
 suite("Create Composite Type", async () => {
   await suite("should not throw", async () => {
@@ -92,31 +93,26 @@ suite("Create Composite Type", async () => {
     });
 
     await test("zod", (t: TestContext) => {
-      const nullable = Preferences("preferences");
-      const nonNullable = Preferences("preferences").notNull();
+      const preferences = Preferences("preferences");
 
       const validValue = {
         favoriteColor: "blue",
         emailOptIn: true,
       };
-      t.assert.deepStrictEqual(nullable.zodSchema.safeParse(validValue), {
+      t.assert.deepStrictEqual(preferences.zodSchema.safeParse(validValue), {
         success: true,
         data: validValue,
       });
-      t.assert.deepStrictEqual(nullable.zodSchema.safeParse(null), {
-        success: true,
-        data: null,
+      t.assert.partialDeepStrictEqual(preferences.zodSchema.safeParse(null), {
+        success: false,
       });
       t.assert.partialDeepStrictEqual(
-        nullable.zodSchema.safeParse({
+        preferences.zodSchema.safeParse({
           favoriteColor: null,
           emailOptIn: true,
         }),
         { success: false },
       );
-      t.assert.partialDeepStrictEqual(nonNullable.zodSchema.safeParse(null), {
-        success: false,
-      });
     });
   });
 
@@ -125,8 +121,11 @@ suite("Create Composite Type", async () => {
       street: text("street").notNull(),
       postalCode: integer("postal_code"),
     });
-    const NullableAddress = Address("address");
-    const NonNullableAddress = Address("address").notNull();
+    const Buildings = pgTable("public.buildings", {
+      nullableAdress: Address("nullable_adress"),
+      nonNullableAdress: Address("non_nullable_adress").notNull(),
+    });
+    type Building = Selectable<ToTableType<typeof Buildings>>;
 
     await test("fields inference", () => {
       type AddressFields = typeof Address.fields;
@@ -136,23 +135,25 @@ suite("Create Composite Type", async () => {
     });
 
     await test("nullable column output inference", () => {
-      type AddressOutput = output<(typeof NullableAddress)["zodSchema"]>;
+      type AddressOutput = Building["nullableAdress"];
       const _validOutputs: AddressOutput[] = [
         null,
         { street: "Main St", postalCode: 75000 },
         { street: "Main St", postalCode: null },
       ];
-      const _missingField: AddressOutput = {
-        street: "Main St",
-      } as AddressOutput;
-      const _invalidType: AddressOutput = {
-        street: "Main St",
-        postalCode: "75000",
-      } as AddressOutput;
+      const _missingField: AddressOutput[] = [
+        // @ts-expect-error
+        { street: "Main St" },
+        {
+          street: "Main St",
+          // @ts-expect-error
+          postalCode: "75000",
+        },
+      ];
     });
 
     await test("non-nullable column output inference", () => {
-      type AddressOutput = output<(typeof NonNullableAddress)["zodSchema"]>;
+      type AddressOutput = Building["nonNullableAdress"];
       const _validOutputs: AddressOutput[] = [
         { street: "Main St", postalCode: 75000 },
       ];
@@ -310,7 +311,12 @@ suite("Create Composite Type", async () => {
           {
             id: randomUUID(),
             name: "HQ",
-            coordinates: { latitude: "1", longitude: 2, label: null },
+            coordinates: {
+              // @ts-expect-error
+              latitude: "1",
+              longitude: 2,
+              label: null,
+            },
           },
         ];
       });

@@ -18,7 +18,7 @@ function serializeCreateTable(
         ...columns.map(
           (col) =>
             `"${col.name}" ${[
-              col.type.computeType(),
+              col.type.computeType() + (col.type.isArray ? "[]" : ""),
               col.type.isPrimaryKey && "PRIMARY KEY",
               col.type.isNotNull && "NOT NULL",
               col.type.defaultExpression &&

@@ -1,11 +1,12 @@
-import { DataType, UserDefined, custom } from "./data_types";
+import { DataType } from "./data_types/base";
+import { UserDefined } from "./data_types/pg_types";
+import { custom } from "./data_types/helpers";
 import type {
   PgCompositeTypeDefinition,
   PgTableColumnDefinition,
   PgIdentifier,
   PgTableConstraintsCallback,
   PgTableDefinition,
-  SelectShema,
   SQLExpression,
 } from "./types";
 import {
@@ -16,6 +17,7 @@ import {
   isValidIdentifier,
 } from "./utils";
 import { enum as _enum, object, type output, type ZodType } from "zod";
+import { selectSchema } from "./schema";
 
 type CompositeDefaultInput<FieldsDefinition extends PgTableColumnDefinition> =
   Partial<{
@@ -151,7 +153,7 @@ export function pgEnumType<
   if (!hasItems(values)) throw new Error(`Enum ${enumName} has no values`);
 
   return Object.defineProperty(
-    Object.assign(custom(enumName, _enum(values).nullable()), {
+    Object.assign(custom(enumName, _enum(values)), {
       enumName,
       values,
     }),
@@ -201,11 +203,7 @@ export function pgCompositeType<
     }),
   ) as PgCompositeTypeDefinition<CompositeTypeName, FieldsDefinition>;
 
-  const schema = object<SelectShema<FieldsDefinition>>(
-    fromEntries(
-      fieldsDefinition.map(([key, value]) => [key, value.zodSchema]),
-    ) as SelectShema<FieldsDefinition>,
-  ).nullable();
+  const schema = selectSchema(fields);
 
   const defaultInputShape: Record<string, ReturnType<ZodType["optional"]>> = {};
   for (const [key, value] of fieldsDefinition) {

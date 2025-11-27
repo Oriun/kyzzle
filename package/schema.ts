@@ -1,28 +1,33 @@
 import { never, object, ZodObject } from "zod";
 import type {
-  InsertShema,
+  InsertSchema,
+  PgCompositeTypeDefinition,
   PgIdentifier,
   PgTableColumnDefinition,
   PgTableDefinition,
   SchemaGenerationOptions,
-  SelectShema,
-  UpdateShema,
+  SelectSchema,
+  UpdateSchema,
 } from "./types";
-import { entries, fromEntries } from "./utils";
+import { entries, fromEntries, isNullable } from "./utils";
 
 export function selectSchema<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
 >(
-  table: PgTableDefinition<TableName, ColumnDefinition>,
-): ZodObject<SelectShema<ColumnDefinition>> {
+  table:
+    | PgTableDefinition<TableName, ColumnDefinition>
+    | PgCompositeTypeDefinition<TableName, ColumnDefinition>,
+): ZodObject<SelectSchema<ColumnDefinition>> {
   return object(
     fromEntries(
       entries(table).map(([name, column]) => {
-        return [name, column.type.zodSchema];
+        if (column.type.isNotNull || isNullable(column.type.zodSchema))
+          return [name, column.type.zodSchema];
+        return [name, column.type.zodSchema.nullable()];
       }),
     ),
-  );
+  ) as unknown as ZodObject<SelectSchema<ColumnDefinition>>;
 }
 
 export function insertSchema<
@@ -31,7 +36,7 @@ export function insertSchema<
 >(
   table: PgTableDefinition<TableName, ColumnDefinition>,
   options: SchemaGenerationOptions = { throwOnForbiddenColumns: true },
-): ZodObject<InsertShema<ColumnDefinition>> {
+): ZodObject<InsertSchema<ColumnDefinition>> {
   return object(
     fromEntries(
       entries(table)
@@ -43,12 +48,23 @@ export function insertSchema<
         .map(([name, column]) => {
           if (column.type.generatedAlwaysExpression)
             return [name, never().optional()];
-          if (column.type.isNotNull && !column.type.defaultExpression)
-            return [name, column.type.zodSchema];
-          return [name, column.type.zodSchema.optional()];
+          if (column.type.defaultExpression) {
+            return [
+              name,
+              column.type.isNotNull
+                ? column.type.zodSchema.optional()
+                : column.type.zodSchema.nullable().optional(),
+            ];
+          }
+          return [
+            name,
+            column.type.isNotNull
+              ? column.type.zodSchema
+              : column.type.zodSchema.nullable().optional(),
+          ];
         }),
     ),
-  ) as unknown as ZodObject<InsertShema<ColumnDefinition>>;
+  ) as unknown as ZodObject<InsertSchema<ColumnDefinition>>;
 }
 
 export function updateSchema<
@@ -57,7 +73,7 @@ export function updateSchema<
 >(
   table: PgTableDefinition<TableName, ColumnDefinition>,
   options: SchemaGenerationOptions = { throwOnForbiddenColumns: true },
-): ZodObject<UpdateShema<ColumnDefinition>> {
+): ZodObject<UpdateSchema<ColumnDefinition>> {
   return object(
     fromEntries(
       entries(table)
@@ -75,8 +91,13 @@ export function updateSchema<
             column.type.isImmutable
           )
             return [name, never().optional()];
-          return [name, column.type.zodSchema];
+          return [
+            name,
+            column.type.isNotNull
+              ? column.type.zodSchema
+              : column.type.zodSchema.nullable(),
+          ];
         }),
     ),
-  ).partial() as unknown as ZodObject<UpdateShema<ColumnDefinition>>;
+  ).partial() as unknown as ZodObject<UpdateSchema<ColumnDefinition>>;
 }

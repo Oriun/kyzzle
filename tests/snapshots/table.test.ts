@@ -10,36 +10,28 @@ exports[`Create Table > should create a table 1`] = `
       "isUnique": false,
       "isNotNull": false,
       "isImmutable": false,
+      "isArray": false,
       "zodSchema": {
         "_def": {
-          "innerType": {
+          "schema": {
             "_def": {
-              "schema": {
-                "_def": {
-                  "checks": [
-                    {
-                      "kind": "uuid"
-                    }
-                  ],
-                  "typeName": "ZodString",
-                  "coerce": false
-                },
-                "~standard": {
-                  "version": 1,
-                  "vendor": "zod"
+              "checks": [
+                {
+                  "kind": "uuid"
                 }
-              },
-              "typeName": "ZodEffects",
-              "effect": {
-                "type": "transform"
-              }
+              ],
+              "typeName": "ZodString",
+              "coerce": false
             },
             "~standard": {
               "version": 1,
               "vendor": "zod"
             }
           },
-          "typeName": "ZodNullable"
+          "typeName": "ZodEffects",
+          "effect": {
+            "type": "transform"
+          }
         },
         "~standard": {
           "version": 1,
@@ -58,20 +50,12 @@ exports[`Create Table > should create a table 1`] = `
       "isUnique": false,
       "isNotNull": false,
       "isImmutable": false,
+      "isArray": false,
       "zodSchema": {
         "_def": {
-          "innerType": {
-            "_def": {
-              "checks": [],
-              "typeName": "ZodString",
-              "coerce": false
-            },
-            "~standard": {
-              "version": 1,
-              "vendor": "zod"
-            }
-          },
-          "typeName": "ZodNullable"
+          "checks": [],
+          "typeName": "ZodString",
+          "coerce": false
         },
         "~standard": {
           "version": 1,

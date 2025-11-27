@@ -13,7 +13,7 @@ import {
 import { randomBytes, randomUUID } from "node:crypto";
 import { basename, join } from "node:path";
 import { snapshot, suite, test, type TestContext } from "node:test";
-import { type output, string, ZodObject } from "zod";
+import { string, ZodObject } from "zod";
 import { type Selectable, type Insertable, type Updateable } from "kysely";
 
 suite("Create Table", async () => {

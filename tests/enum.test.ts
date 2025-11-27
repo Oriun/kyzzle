@@ -5,6 +5,7 @@ import {
   pgTable,
   selectSchema,
   text,
+  type ToTableType,
   updateSchema,
   uuid,
   type KyselyTables,
@@ -12,7 +13,6 @@ import {
 import { randomBytes, randomUUID } from "node:crypto";
 import { suite, test, type TestContext } from "node:test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
-import { type output } from "zod";
 
 suite("Create Enum", async () => {
   await suite("should not throw", async () => {
@@ -68,9 +68,8 @@ suite("Create Enum", async () => {
         success: true,
         data: "CREATED",
       });
-      t.assert.deepStrictEqual(column.zodSchema.safeParse(null), {
-        success: true,
-        data: null,
+      t.assert.partialDeepStrictEqual(column.zodSchema.safeParse(null), {
+        success: false,
       });
       t.assert.partialDeepStrictEqual(column.zodSchema.safeParse("UNKNOWN"), {
         success: false,
@@ -80,8 +79,11 @@ suite("Create Enum", async () => {
 
   await suite("type inference", async () => {
     const Roles = pgEnumType("auth.roles", ["ADMIN", "MEMBER"] as const);
-    const NullableRole = Roles("nullable_role");
-    const NonNullableRole = Roles("role").notNull();
+    const Users = pgTable("public.users", {
+      nullableRole: Roles("nullable_role"),
+      nonNullableRole: Roles("non_nullable_role").notNull(),
+    });
+    type User = Selectable<ToTableType<typeof Users>>;
 
     await test("enum values inference", () => {
       type RoleTuple = typeof Roles.values;
@@ -95,19 +97,15 @@ suite("Create Enum", async () => {
     });
 
     await test("nullable column output inference", () => {
-      type NullableRoleOutput = output<(typeof NullableRole)["zodSchema"]>;
-      const _nullableValues: NullableRoleOutput[] = ["ADMIN", "MEMBER", null];
+      const _nullableValues: User["nullableRole"][] = ["ADMIN", "MEMBER", null];
       // @ts-expect-error
-      const _invalidNullable: NullableRoleOutput = "OWNER";
+      const _invalidNullable: User["nullableRole"] = "OWNER";
     });
 
     await test("non-nullable column output inference", () => {
-      type NonNullableRoleOutput = output<
-        (typeof NonNullableRole)["zodSchema"]
-      >;
-      const _nonNullableValues: NonNullableRoleOutput[] = ["ADMIN", "MEMBER"];
+      const _nonNullableValues: User["nonNullableRole"][] = ["ADMIN", "MEMBER"];
       // @ts-expect-error
-      const _nullNonNullable: NonNullableRoleOutput = null;
+      const _nullNonNullable: User["nonNullableRole"] = null;
     });
   });
 
