@@ -44,7 +44,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters & { isNotNull: true },
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   array() {
     this.isArray = true;
@@ -55,7 +59,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters & { isNotNull: false },
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   unique() {
     this.isUnique = true;
@@ -65,7 +73,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters,
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   primaryKey() {
     this.isPrimaryKey = true;
@@ -85,7 +97,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters & { hasDefault: true },
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   generatedAlwaysAs(expression: SQLExpression, ...args: any[]) {
     this.generatedAlwaysExpression = processExpression(expression, args);
@@ -96,7 +112,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters & { isImmutable: true; isGeneratedAlways: true },
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   immutable() {
     this.isImmutable = true;
@@ -106,7 +126,11 @@ export abstract class DataType<
       ZodschemaType,
       Parameters & { isImmutable: true },
       DefaultType
-    >;
+    > &
+      Omit<
+        typeof this,
+        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
+      >;
   }
   override<Z extends ZodType>(
     schema: Z | ((currentSchema: ZodschemaType) => Z),

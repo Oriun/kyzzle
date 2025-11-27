@@ -50,7 +50,8 @@ class CompositeUserDefined<
       Schema,
       { hasDefault: true },
       CompositeDefaultInput<FieldsDefinition> | SQLExpression
-    >;
+    > &
+    Omit<typeof this, keyof DataType<Name, CompositeName, Schema, any, any>>;
   constructor(
     name: Name,
     parameters: { type: CompositeName; schema: Schema },

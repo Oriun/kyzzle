@@ -104,6 +104,10 @@ export class UnParametered<
 export class Numeric<T extends string> extends DataType<T, "numeric"> {
   public precision?: number;
   public scale?: number;
+  public minExclusive?: SQLExpression;
+  public maxExclusive?: SQLExpression;
+  public minInclusive?: SQLExpression;
+  public maxInclusive?: SQLExpression;
   constructor(
     name: T,
     parameters: { precision?: number; scale?: number } = {},
@@ -116,6 +120,22 @@ export class Numeric<T extends string> extends DataType<T, "numeric"> {
     if (this.precision === undefined && this.scale === undefined)
       return this.pgType;
     return `${this.pgType}(${[this.precision, this.scale].join(", ")})`;
+  }
+  gt(value: SQLExpression) {
+    this.minExclusive = value;
+    return this;
+  }
+  lt(value: SQLExpression) {
+    this.maxExclusive = value;
+    return this;
+  }
+  gte(value: SQLExpression) {
+    this.minInclusive = value;
+    return this;
+  }
+  lte(value: SQLExpression) {
+    this.maxInclusive = value;
+    return this;
   }
 }
 
