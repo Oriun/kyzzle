@@ -1,4 +1,4 @@
-import type { ZodNullable, ZodNumber, ZodType } from "zod";
+import type { ZodNumber, ZodType } from "zod";
 import type {
   ParametersWithTypeImpact,
   PgKnownTypes,
@@ -9,8 +9,13 @@ import { DataType } from "./base";
 export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   T,
   Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint",
-  ZodNullable<ZodNumber>
+  ZodNumber
 > {
+  public minExclusive?: number;
+  public maxExclusive?: number;
+  public minInclusive?: number;
+  public maxInclusive?: number;
+  public divisibleBy?: number;
   constructor(name: T, parameters: { size: Size }) {
     const pgType = (
       parameters.size === 2
@@ -20,6 +25,63 @@ export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
           : "bigint"
     ) as Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint";
     super(name, pgType);
+  }
+  gt(value: number) {
+    this.minExclusive = value;
+    this.zodSchema = this.zodSchema.gt(value);
+    return this;
+  }
+  lt(value: number) {
+    this.maxExclusive = value;
+    this.zodSchema = this.zodSchema.lt(value);
+    return this;
+  }
+  gte(value: number) {
+    this.minInclusive = value;
+    this.zodSchema = this.zodSchema.gte(value);
+    return this;
+  }
+  lte(value: number) {
+    this.maxInclusive = value;
+    this.zodSchema = this.zodSchema.lte(value);
+    return this;
+  }
+  nonnegative() {
+    this.zodSchema = this.zodSchema.nonnegative();
+    this.minInclusive = 0;
+    this.minExclusive = undefined;
+    this.maxExclusive = undefined;
+    this.maxInclusive = undefined;
+    return this;
+  }
+  nonpositive() {
+    this.zodSchema = this.zodSchema.nonpositive();
+    this.maxInclusive = 0;
+    this.maxExclusive = undefined;
+    this.minExclusive = undefined;
+    this.minInclusive = undefined;
+    return this;
+  }
+  positive() {
+    this.zodSchema = this.zodSchema.positive();
+    this.minExclusive = 0;
+    this.minInclusive = undefined;
+    this.maxExclusive = undefined;
+    this.maxInclusive = undefined;
+    return this;
+  }
+  negative() {
+    this.zodSchema = this.zodSchema.negative();
+    this.maxExclusive = 0;
+    this.maxInclusive = undefined;
+    this.minExclusive = undefined;
+    this.minInclusive = undefined;
+    return this;
+  }
+  multipleOf(value: number) {
+    this.zodSchema = this.zodSchema.multipleOf(value);
+    this.divisibleBy = value;
+    return this;
   }
 }
 
@@ -34,6 +96,7 @@ export class BoundedString<
   Mode extends "char" | "varchar",
 > extends DataType<T, Mode> {
   length: number;
+  pattern?: RegExp;
   constructor(name: T, parameters: { mode: Mode; length: number }) {
     super(name, parameters.mode);
     this.length = parameters.length;
@@ -41,11 +104,51 @@ export class BoundedString<
   computeType() {
     return this.pgType + `(${this.length})`;
   }
+  regex(pattern: RegExp) {
+    this.pattern = pattern;
+    // @ts-ignore
+    this.zodSchema = this.zodSchema.regex(pattern);
+    return this;
+  }
 }
 
 export class UnBoundedString<T extends string> extends DataType<T, "text"> {
+  public maxLength?: number;
+  public minLength?: number;
+  public pattern?: RegExp;
+
   constructor(name: T) {
     super(name, "text");
+  }
+  length(length: number) {
+    return this.min(length).max(length);
+  }
+  min(length: number) {
+    this.minLength = length;
+    this.zodSchema = this.zodSchema.min(length);
+    return this;
+  }
+  max(length: number) {
+    this.maxLength = length;
+    this.zodSchema = this.zodSchema.max(length);
+    return this;
+  }
+  regex(pattern: RegExp) {
+    this.pattern = pattern;
+    this.zodSchema = this.zodSchema.regex(pattern);
+    return this;
+  }
+}
+
+export class PatternString<T extends string> extends DataType<T, "text"> {
+  pattern: string;
+  constructor(name: T, pattern: string) {
+    super(name, "text");
+    this.pattern = pattern;
+    // @ts-ignore
+    this.zodSchema = this.zodSchema.refine((value) => {
+      return new RegExp(pattern).test(value);
+    }, `must match pattern ${pattern}`);
   }
 }
 
@@ -66,6 +169,9 @@ export class Timestamp<
   Mode extends "timestamp" | "timestamptz",
 > extends DataType<T, Mode> {
   public precision?: number;
+  public minDate?: Date;
+  public maxDate?: Date;
+
   constructor(
     name: T,
     parameters: {
@@ -83,6 +189,22 @@ export class Timestamp<
     if (this.precision !== undefined)
       return this.pgType + `(${this.precision})`;
     return this.pgType;
+  }
+  min(date: Date) {
+    this.minDate = date;
+    // @ts-ignore
+    this.zodSchema = this.zodSchema.refine((value) => {
+      return value >= date;
+    }, `must be greater than or equal to ${date}`);
+    return this;
+  }
+  max(date: Date) {
+    this.maxDate = date;
+    // @ts-ignore
+    this.zodSchema = this.zodSchema.refine((value) => {
+      return value <= date;
+    }, `must be less than or equal to ${date}`);
+    return this;
   }
 }
 
