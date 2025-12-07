@@ -38,7 +38,7 @@ class CompositeUserDefined<
   {},
   CompositeDefaultInput<FieldsDefinition> | SQLExpression
 > {
-  private readonly _defaultReturn!: CompositeUserDefined<
+  public readonly _defaultReturn!: CompositeUserDefined<
     Name,
     CompositeName,
     Schema,

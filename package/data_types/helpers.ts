@@ -33,11 +33,11 @@ export const int2 = smallInt;
 export const json = <T extends string, SchemaType extends ZodType>(
   name: T,
   schema: SchemaType,
-) => new JsonObject(name, { mode: "json", schema: schema.nullish() });
+) => new JsonObject(name, { mode: "json", schema: schema });
 export const jsonb = <T extends string, SchemaType extends ZodType>(
   name: T,
   schema: SchemaType,
-) => new JsonObject(name, { mode: "jsonb", schema: schema.nullish() });
+) => new JsonObject(name, { mode: "jsonb", schema: schema });
 
 export const numeric = <T extends string>(
   name: T,

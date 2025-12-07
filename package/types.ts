@@ -1,4 +1,4 @@
-import type { output, ZodNullable, ZodOptional, ZodType } from "zod";
+import type { output, ZodArray, ZodNullable, ZodOptional, ZodType } from "zod";
 import type { DataType } from "./data_types/base";
 import type { ColumnType } from "kysely";
 /**
@@ -29,6 +29,7 @@ export interface ParametersWithTypeImpact {
   isImmutable?: boolean;
   hasDefault?: boolean;
   isGeneratedAlways?: boolean;
+  isArray?: boolean;
 }
 
 export type SelectSchema<ColumnDefinition extends PgTableColumnDefinition> = {
@@ -41,12 +42,17 @@ export type SelectSchema<ColumnDefinition extends PgTableColumnDefinition> = {
     any
   >
     ? Parameters extends { isNotNull: true }
-      ? ZodSchema
-      : ZodNullable<ZodSchema>
+      ? Parameters extends { isArray: true }
+        ? ZodArray<ZodNullable<ZodSchema>>
+        : ZodSchema
+      : Parameters extends { isArray: true }
+        ? ZodArray<ZodNullable<ZodSchema>>
+        : ZodNullable<ZodSchema>
     : never;
 };
 export type InsertSchema<ColumnDefinition extends PgTableColumnDefinition> =
-  StripImpossibleProps<{
+  // StripImpossibleProps<{
+  {
     [key in keyof ColumnDefinition &
       string]: ColumnDefinition[key] extends DataType<
       any,
@@ -58,10 +64,15 @@ export type InsertSchema<ColumnDefinition extends PgTableColumnDefinition> =
       ? Parameters extends { isGeneratedAlways: true }
         ? never
         : Parameters extends { isNotNull: true }
-          ? ZodNullable<ZodSchema>
-          : ZodSchema
+          ? Parameters extends { isArray: true }
+            ? ZodArray<ZodNullable<ZodSchema>>
+            : ZodSchema
+          : Parameters extends { isArray: true }
+            ? ZodArray<ZodNullable<ZodSchema>>
+            : ZodNullable<ZodSchema>
       : never;
-  }>;
+  };
+// }>;
 export type UpdateSchema<ColumnDefinition extends PgTableColumnDefinition> =
   StripImpossibleProps<{
     [key in keyof ColumnDefinition &
@@ -120,6 +131,7 @@ export type PgKnownKeywords =
 export type SQLExpression =
   | PgKnownKeywords
   | (string & {})
+  | Date
   | number
   | boolean
   | TemplateStringsArray;
@@ -184,21 +196,31 @@ export type MergeUnionOptional<U> = {
 export type ToColumnType<Type extends DataType<any, any, any>> =
   Type extends DataType<any, any, infer ZodSchemaType, infer Parameters, any>
     ? ColumnType<
-        Parameters extends { isNotNull: true }
-          ? output<ZodSchemaType>
-          : output<ZodNullable<ZodSchemaType>>,
+        output<
+          Parameters extends { isNotNull: true }
+            ? Parameters extends { isArray: true }
+              ? ZodArray<ZodNullable<ZodSchemaType>>
+              : ZodSchemaType
+            : Parameters extends { isArray: true }
+              ? ZodArray<ZodNullable<ZodSchemaType>>
+              : ZodNullable<ZodSchemaType>
+        >,
         Parameters extends { isGeneratedAlways: true }
-          ? never
-          : Parameters extends { isNotNull: true }
-            ? Parameters extends { hasDefault: true }
-              ? output<ZodSchemaType> | null | undefined
-              : output<ZodSchemaType>
-            : output<ZodSchemaType> | null | undefined,
+          ? { _: "can't insert this field" } | undefined
+          : output<
+              Parameters extends { isNotNull: true }
+                ? Parameters extends { hasDefault: true }
+                  ? ZodOptional<ZodNullable<ZodSchemaType>>
+                  : ZodSchemaType
+                : ZodOptional<ZodNullable<ZodSchemaType>>
+            >,
         Parameters extends { isImmutable: true } | { isGeneratedAlways: true }
-          ? { _: "can't update this field" }
-          : Parameters extends { isNotNull: true }
-            ? output<ZodSchemaType>
-            : output<ZodNullable<ZodSchemaType>>
+          ? { _: "can't update this field" } | undefined
+          : output<
+              Parameters extends { isNotNull: true }
+                ? ZodSchemaType
+                : ZodNullable<ZodSchemaType>
+            >
       >
     : never;
 export type ToTableType<Table extends PgTableDefinition<any, any>> = {

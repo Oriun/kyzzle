@@ -58,7 +58,7 @@ export abstract class DataType<
       T,
       PgType,
       ZodschemaType,
-      Parameters & { isNotNull: false },
+      Parameters & { isNotNull: false; isArray: true },
       DefaultType
     > &
       Omit<
@@ -152,6 +152,8 @@ function processExpression(expression: SQLExpression, args?: any[]) {
     !(expression.startsWith("'") && expression.endsWith("'"))
     ? `'${expression}'`
     : typeof expression === "object"
-      ? `'${JSON.stringify(expression)}'`
+      ? expression instanceof Date
+        ? `'${expression.toISOString()}'`
+        : `'${JSON.stringify(expression)}'`
       : expression;
 }

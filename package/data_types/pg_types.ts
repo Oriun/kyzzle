@@ -1,4 +1,4 @@
-import type { ZodNumber, ZodType } from "zod";
+import type { ZodNumber, ZodString, ZodType } from "zod";
 import type {
   ParametersWithTypeImpact,
   PgKnownTypes,
@@ -94,7 +94,8 @@ export class Bool<T extends string> extends DataType<T, "boolean"> {
 export class BoundedString<
   T extends string,
   Mode extends "char" | "varchar",
-> extends DataType<T, Mode> {
+  Parameters extends ParametersWithTypeImpact,
+> extends DataType<T, Mode, ZodString, Parameters> {
   length: number;
   pattern?: RegExp;
   constructor(name: T, parameters: { mode: Mode; length: number }) {
@@ -106,7 +107,6 @@ export class BoundedString<
   }
   regex(pattern: RegExp) {
     this.pattern = pattern;
-    // @ts-ignore
     this.zodSchema = this.zodSchema.regex(pattern);
     return this;
   }
@@ -140,23 +140,11 @@ export class UnBoundedString<T extends string> extends DataType<T, "text"> {
   }
 }
 
-export class PatternString<T extends string> extends DataType<T, "text"> {
-  pattern: string;
-  constructor(name: T, pattern: string) {
-    super(name, "text");
-    this.pattern = pattern;
-    // @ts-ignore
-    this.zodSchema = this.zodSchema.refine((value) => {
-      return new RegExp(pattern).test(value);
-    }, `must match pattern ${pattern}`);
-  }
-}
-
 export class JsonObject<
   T extends string,
   Mode extends "json" | "jsonb",
   Schema extends ZodType,
-> extends DataType<T, Mode, Schema, {}> {
+> extends DataType<T, Mode, Schema> {
   public zodSchema: Schema;
   constructor(name: T, parameters: { mode: Mode; schema: Schema }) {
     super(name, parameters.mode);

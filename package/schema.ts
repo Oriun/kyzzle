@@ -1,4 +1,4 @@
-import { never, object, ZodObject } from "zod";
+import { never, object, ZodObject, ZodType } from "zod";
 import type {
   InsertSchema,
   PgCompositeTypeDefinition,
@@ -22,9 +22,14 @@ export function selectSchema<
   return object(
     fromEntries(
       entries(table).map(([name, column]) => {
-        if (column.type.isNotNull || isNullable(column.type.zodSchema))
-          return [name, column.type.zodSchema];
-        return [name, column.type.zodSchema.nullable()];
+        let schema: ZodType = column.type.zodSchema;
+
+        if (column.type.isArray) schema = schema.array();
+
+        if (!column.type.isNotNull && !isNullable(column.type.zodSchema))
+          schema = schema.nullable();
+
+        return [name, schema];
       }),
     ),
   ) as unknown as ZodObject<SelectSchema<ColumnDefinition>>;
@@ -46,22 +51,19 @@ export function insertSchema<
           return true;
         })
         .map(([name, column]) => {
+          let schema: ZodType = column.type.zodSchema;
+
+          if (column.type.isArray) schema = schema.array();
+
+          if (!column.type.isNotNull) schema = schema.nullable();
+
+          if (column.type.defaultExpression || !column.type.isNotNull)
+            schema = schema.optional();
+
           if (column.type.generatedAlwaysExpression)
-            return [name, never().optional()];
-          if (column.type.defaultExpression) {
-            return [
-              name,
-              column.type.isNotNull
-                ? column.type.zodSchema.optional()
-                : column.type.zodSchema.nullable().optional(),
-            ];
-          }
-          return [
-            name,
-            column.type.isNotNull
-              ? column.type.zodSchema
-              : column.type.zodSchema.nullable().optional(),
-          ];
+            schema = never().optional();
+
+          return [name, schema];
         }),
     ),
   ) as unknown as ZodObject<InsertSchema<ColumnDefinition>>;
@@ -86,17 +88,19 @@ export function updateSchema<
           return true;
         })
         .map(([name, column]) => {
+          let schema: ZodType = column.type.zodSchema;
+
+          if (column.type.isArray) schema = schema.array();
+
+          if (!column.type.isNotNull) schema = schema.nullable();
+
           if (
             column.type.generatedAlwaysExpression !== undefined ||
             column.type.isImmutable
           )
-            return [name, never().optional()];
-          return [
-            name,
-            column.type.isNotNull
-              ? column.type.zodSchema
-              : column.type.zodSchema.nullable(),
-          ];
+            schema = never().optional();
+
+          return [name, schema];
         }),
     ),
   ).partial() as unknown as ZodObject<UpdateSchema<ColumnDefinition>>;
