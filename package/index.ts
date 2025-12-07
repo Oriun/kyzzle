@@ -6,3 +6,4 @@ export * from "./constraints";
 export * from "./schema";
 export * from "./serialization";
 export * from "./introspection";
+export { sql } from "./utils";
