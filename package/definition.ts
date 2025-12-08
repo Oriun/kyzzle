@@ -19,7 +19,7 @@ import {
 } from "./utils";
 import { enum as _enum, object, type output, type ZodType } from "zod";
 import { selectSchema } from "./schema";
-import { constraintRefinement, normalizeConstraints } from "./constraints";
+import { normalizeConstraints, registerTableConstraints } from "./constraints";
 
 type CompositeDefaultInput<FieldsDefinition extends PgTableColumnDefinition> =
   Partial<{
@@ -140,19 +140,10 @@ export function pgTable<
     _constraints?.(table as PgTableDefinition<TableName, ColumnDefinition>) ??
       [],
   );
+  registerTableConstraints(table, constraints);
   return Object.defineProperties(table, {
     __brand: {
       value: "Table",
-      writable: false,
-      enumerable: false,
-    },
-    constraints: {
-      value: constraints,
-      writable: false,
-      enumerable: false,
-    },
-    refine: {
-      value: () => constraintRefinement(constraints),
       writable: false,
       enumerable: false,
     },

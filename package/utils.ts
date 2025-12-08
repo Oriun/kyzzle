@@ -130,3 +130,19 @@ function findFirstIdent(str: string) {
 export function hasItems<T>(arr: T[]): arr is [T, ...T[]] {
   return arr.length > 0;
 }
+
+export function isTableColumn(
+  value: unknown,
+): value is import("./types").TableColumn<
+  import("./types").PgIdentifier,
+  string,
+  any,
+  any,
+  any
+> {
+  return !!(
+    value &&
+    typeof value === "object" &&
+    (value as { __brand?: string }).__brand === "TableColumn"
+  );
+}

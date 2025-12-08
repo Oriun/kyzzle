@@ -6,9 +6,15 @@ import type {
 } from "../types";
 import { DataType } from "./base";
 
+type IntegerPgType<Size extends 2 | 4 | 8> = Size extends 2
+  ? "smallint"
+  : Size extends 4
+    ? "integer"
+    : "bigint";
+
 export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   T,
-  Size extends 2 ? "smallint" : Size extends 4 ? "integer" : "bigint",
+  IntegerPgType<Size>,
   ZodNumber
 > {
   public minExclusive?: number;
@@ -23,7 +29,7 @@ export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
         : parameters.size === 4
           ? "integer"
           : "bigint"
-    ) as Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint";
+    ) as IntegerPgType<Size>;
     super(name, pgType);
   }
   gt(value: number) {

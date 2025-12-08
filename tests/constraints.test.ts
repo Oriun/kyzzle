@@ -6,6 +6,7 @@ import {
   primaryKey,
   serializeTable,
   text,
+  tableRefinement,
   unique,
   uuid,
 } from "kyzzle_test";
@@ -27,7 +28,7 @@ suite("Constraints", async () => {
         check("name_not_empty", "char_length(name) > 0"),
         foreignKey("companies_owner_fk")
           .on(table.ownerId)
-          .references("public.users", ["id"], {
+          .setReferences("public.users", ["id"], {
             onDelete: "SET NULL",
             onUpdate: "CASCADE",
           }),
@@ -65,33 +66,35 @@ suite("Constraints", async () => {
         ),
         foreignKey("roles_team_fk")
           .on(table.orgId, table.teamId)
-          .references("public.teams", ["org_id", "team_id"]),
+          .setReferences("public.teams", ["org_id", "team_id"]),
       ],
     );
 
-    const schema = insertSchema(Roles).superRefine(Roles.refine());
+    await test("runs opt-in refinements", (t: TestContext) => {
+      const schema = insertSchema(Roles).superRefine(tableRefinement(Roles)!);
 
-    t.assert.strictEqual(
-      schema.safeParse({ id: randomUUID(), name: "ok" }).success,
-      true,
-    );
-    t.assert.strictEqual(
-      schema.safeParse({ id: randomUUID(), name: "forbidden" }).success,
-      false,
-    );
-    t.assert.strictEqual(
-      schema.safeParse({ id: randomUUID(), name: "ok", orgId: randomUUID() })
-        .success,
-      false,
-    );
-    t.assert.strictEqual(
-      schema.safeParse({
-        id: randomUUID(),
-        name: "ok",
-        orgId: randomUUID(),
-        teamId: randomUUID(),
-      }).success,
-      true,
-    );
+      t.assert.strictEqual(
+        schema.safeParse({ id: randomUUID(), name: "ok" }).success,
+        true,
+      );
+      t.assert.strictEqual(
+        schema.safeParse({ id: randomUUID(), name: "forbidden" }).success,
+        false,
+      );
+      t.assert.strictEqual(
+        schema.safeParse({ id: randomUUID(), name: "ok", orgId: randomUUID() })
+          .success,
+        false,
+      );
+      t.assert.strictEqual(
+        schema.safeParse({
+          id: randomUUID(),
+          name: "ok",
+          orgId: randomUUID(),
+          teamId: randomUUID(),
+        }).success,
+        true,
+      );
+    });
   });
 });

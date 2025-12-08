@@ -1,4 +1,11 @@
-import type { output, ZodArray, ZodNullable, ZodOptional, ZodType } from "zod";
+import type {
+  RefinementCtx,
+  output,
+  ZodArray,
+  ZodNullable,
+  ZodOptional,
+  ZodType,
+} from "zod";
 import type { DataType } from "./data_types/base";
 import type { ColumnType } from "kysely";
 /**
@@ -118,10 +125,7 @@ export type UpdateSchema<ColumnDefinition extends PgTableColumnDefinition> =
 export type PgTable<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
-> = PgTableDefinition<TableName, ColumnDefinition> & {
-  constraints: PgTableConstraint[];
-  refine: () => TableRefinement;
-};
+> = PgTableDefinition<TableName, ColumnDefinition>;
 export type PgTableConstraintsCallback<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
@@ -208,13 +212,7 @@ export type PgTableConstraint =
 
 export type TableRefinement = (
   value: Record<string, unknown>,
-  ctx: {
-    addIssue: (issue: {
-      code: string;
-      path?: (string | number)[];
-      message: string;
-    }) => void;
-  },
+  ctx: RefinementCtx,
 ) => void;
 
 export type TableColumn<
@@ -315,23 +313,46 @@ export type ToColumnType<Type extends DataType<any, any, any>> =
         UpdateOutput<ZodSchemaType, Parameters>
       >
     : never;
-export type ToTableType<Table extends PgTableDefinition<any, any>> = {
-  [column in keyof Table]: ToColumnType<Table[column]["type"]>;
+type TableColumnKeys<Table> = {
+  [K in keyof Table]: Table[K] extends TableColumn<any, any, any, any, any>
+    ? K
+    : never;
+}[keyof Table];
+
+export type ToTableType<Table> = {
+  [column in TableColumnKeys<Table>]: Table[column] extends TableColumn<
+    any,
+    any,
+    any,
+    any,
+    any
+  >
+    ? ToColumnType<Table[column]["type"]>
+    : never;
 };
 
-export type KyselyTables<
-  Tables extends Record<string, PgTableDefinition<any, any>>,
-> = MergeUnionOptional<
-  {
-    [TableName in keyof Tables]: {
-      [name in Tables[TableName][keyof Tables[TableName]]["table"]]: {
-        [column in keyof Tables[TableName]]: ToColumnType<
-          Tables[TableName][column]["type"]
-        >;
+export type KyselyTables<Tables extends Record<string, any>> =
+  MergeUnionOptional<
+    {
+      [TableName in keyof Tables]: {
+        [name in Tables[TableName][TableColumnKeys<
+          Tables[TableName]
+        >]["table"]]: {
+          [column in TableColumnKeys<
+            Tables[TableName]
+          >]: Tables[TableName][column] extends TableColumn<
+            any,
+            any,
+            any,
+            any,
+            any
+          >
+            ? ToColumnType<Tables[TableName][column]["type"]>
+            : never;
+        };
       };
-    };
-  }[keyof Tables]
->;
+    }[keyof Tables]
+  >;
 
 export interface SchemaGenerationOptions {
   /*

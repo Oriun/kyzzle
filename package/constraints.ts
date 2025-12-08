@@ -10,7 +10,10 @@ import { flatTemplateStringArray, isValidIdentifier } from "./utils";
 
 type ConstraintPredicate = (row: Record<string, unknown>) => boolean;
 
-class UniqueConstraint implements PgTableConstraint {
+const tableConstraints = new WeakMap<object, PgTableConstraint[]>();
+const tableRefinements = new WeakMap<object, TableRefinement>();
+
+class UniqueConstraint {
   public readonly kind = "unique";
   public columns: string[] = [];
   constructor(public readonly name?: string) {}
@@ -25,7 +28,7 @@ class UniqueConstraint implements PgTableConstraint {
   }
 }
 
-class PrimaryKeyConstraint implements PgTableConstraint {
+class PrimaryKeyConstraint {
   public readonly kind = "primary_key";
   public columns: string[] = [];
   constructor(public readonly name?: string) {}
@@ -40,7 +43,7 @@ class PrimaryKeyConstraint implements PgTableConstraint {
   }
 }
 
-class CheckConstraint implements PgTableConstraint {
+class CheckConstraint {
   public readonly kind = "check";
   constructor(
     public readonly name: string | undefined,
@@ -49,10 +52,10 @@ class CheckConstraint implements PgTableConstraint {
   ) {}
 }
 
-class ForeignKeyConstraint implements PgTableConstraint {
+class ForeignKeyConstraint {
   public readonly kind = "foreign_key";
   public columns: string[] = [];
-  public references: {
+  private _references: {
     table: PgIdentifier;
     columns: string[];
     onDelete?: PgForeignKeyAction;
@@ -68,7 +71,7 @@ class ForeignKeyConstraint implements PgTableConstraint {
     this.columns = [first, ...rest].map((col) => col.name);
     return this;
   }
-  references(
+  setReferences(
     table: PgIdentifier,
     columns: (string | TableColumn<any, string, string, any, any>)[],
     options: {
@@ -76,7 +79,7 @@ class ForeignKeyConstraint implements PgTableConstraint {
       onUpdate?: PgForeignKeyAction;
     } = {},
   ) {
-    this.references = {
+    this._references = {
       table,
       columns: columns.map((col) =>
         typeof col === "string"
@@ -85,8 +88,11 @@ class ForeignKeyConstraint implements PgTableConstraint {
       ),
       onDelete: options.onDelete,
       onUpdate: options.onUpdate,
-    } as (typeof this)["references"];
+    };
     return this;
+  }
+  get references() {
+    return this._references;
   }
 }
 
@@ -98,6 +104,19 @@ export const check = (
   predicate?: ConstraintPredicate,
 ) => new CheckConstraint(name, expression, predicate);
 export const foreignKey = (name?: string) => new ForeignKeyConstraint(name);
+
+export const registerTableConstraints = (
+  table: object,
+  constraints: PgTableConstraint[],
+) => {
+  tableConstraints.set(table, constraints);
+  tableRefinements.set(table, constraintRefinement(constraints));
+};
+
+export const getTableConstraints = (table: object) =>
+  tableConstraints.get(table);
+export const tableRefinement = (table: object): TableRefinement | undefined =>
+  tableRefinements.get(table);
 
 export function normalizeConstraints(
   tableName: PgIdentifier,
@@ -175,7 +194,7 @@ export function constraintRefinement(
         if (present.length > 0 && missing.length > 0)
           ctx.addIssue({
             code: "custom",
-            path: [missing[0]],
+            path: [missing[0] ?? columns[0] ?? ""],
             message: `Foreign key ${constraint.name ?? ""} requires columns [${columns.join(", ")}] together`,
           });
       }

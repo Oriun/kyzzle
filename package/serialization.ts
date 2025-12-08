@@ -2,8 +2,10 @@ import type {
   PgIdentifier,
   PgTableConstraint,
   PgTableDefinition,
+  TableColumn,
 } from "./types";
-import { sql } from "./utils";
+import { isTableColumn, sql } from "./utils";
+import { getTableConstraints } from "./constraints";
 import { renderConstraintExpression } from "./constraints";
 
 export function serializeTable(
@@ -18,13 +20,14 @@ function serializeCreateTable(
   },
   constraints: PgTableConstraint[] = [],
 ): string {
-  const columns = Object.values(table);
+  const columns = Object.values(table).filter(
+    (value): value is TableColumn<PgIdentifier, string, any, any, any> =>
+      isTableColumn(value),
+  );
   const tableName = columns[0]?.table;
   if (!tableName) throw new Error("Table name is required");
   const constraintDefinitions =
-    constraints.length > 0
-      ? constraints
-      : ((table as { constraints?: PgTableConstraint[] }).constraints ?? []);
+    constraints.length > 0 ? constraints : (getTableConstraints(table) ?? []);
   return sql`
     CREATE TABLE IF NOT EXISTS ${serializeName(tableName)} (
       ${[

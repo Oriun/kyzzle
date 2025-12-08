@@ -17,7 +17,7 @@
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "target": "ES2015",
     "module": "es2015",
     "verbatimModuleSyntax": true,
@@ -25,7 +25,12 @@
     "lib": ["esnext"],
     "types": ["node"],
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "kyzzle_test": ["package"],
+      "kyzzle_test/*": ["package/*"]
+    }
   },
   "exclude": ["tests/index.ts"]
 }
