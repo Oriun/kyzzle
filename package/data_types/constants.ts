@@ -41,6 +41,8 @@ export const TypesToZod = {
 } as const satisfies Record<string, ZodType>;
 
 export const pgKnownKeywords: Set<PgKnownKeywords> = new Set([
+  "CURRENT_DATE",
+  "CURRENT_TIME",
   "CURRENT_TIMESTAMP",
   "NOW()",
   "uuid_generate_v4()",

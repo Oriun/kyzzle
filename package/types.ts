@@ -145,6 +145,8 @@ export type PgKnownTypes =
   | "uuid";
 
 export type PgKnownKeywords =
+  | "CURRENT_DATE"
+  | "CURRENT_TIME"
   | "CURRENT_TIMESTAMP"
   | "NOW()"
   | "uuid_generate_v4()"
