@@ -7,6 +7,7 @@ import type {
   PgIdentifier,
   PgTableConstraintsCallback,
   PgTableDefinition,
+  PgTable,
   SQLExpression,
 } from "./types";
 import {
@@ -18,6 +19,7 @@ import {
 } from "./utils";
 import { enum as _enum, object, type output, type ZodType } from "zod";
 import { selectSchema } from "./schema";
+import { constraintRefinement, normalizeConstraints } from "./constraints";
 
 type CompositeDefaultInput<FieldsDefinition extends PgTableColumnDefinition> =
   Partial<{
@@ -99,7 +101,7 @@ export function pgTable<
   tableName: TableName,
   definition: ColumnDefinition,
   _constraints?: PgTableConstraintsCallback<TableName, ColumnDefinition>,
-): PgTableDefinition<TableName, ColumnDefinition> {
+): PgTable<TableName, ColumnDefinition> {
   if (!isValidIdentifier(tableName))
     throw new Error(
       `Invalid table name: ${tableName}. Please provide full reference like "public.users".`,
@@ -132,11 +134,29 @@ export function pgTable<
       ];
     }),
   );
-  return Object.defineProperty(table, "__brand", {
-    value: "Table",
-    writable: false,
-    enumerable: false,
-  });
+  const constraints = normalizeConstraints(
+    tableName,
+    Object.values(table).map((col) => ({ name: col.name })),
+    _constraints?.(table as PgTableDefinition<TableName, ColumnDefinition>) ??
+      [],
+  );
+  return Object.defineProperties(table, {
+    __brand: {
+      value: "Table",
+      writable: false,
+      enumerable: false,
+    },
+    constraints: {
+      value: constraints,
+      writable: false,
+      enumerable: false,
+    },
+    refine: {
+      value: () => constraintRefinement(constraints),
+      writable: false,
+      enumerable: false,
+    },
+  }) as PgTable<TableName, ColumnDefinition>;
 }
 
 export function pgEnumType<

@@ -8,7 +8,7 @@ import { DataType } from "./base";
 
 export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   T,
-  Size extends 4 ? "smallint" : Size extends 4 ? "integer" : "bigint",
+  Size extends 2 ? "smallint" : Size extends 4 ? "integer" : "bigint",
   ZodNumber
 > {
   public minExclusive?: number;

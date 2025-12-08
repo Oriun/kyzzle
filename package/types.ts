@@ -7,7 +7,6 @@ import type { ColumnType } from "kysely";
 export type PgIdentifier = `${string}.${string}`;
 
 export type PgTableColumnDefinition = Record<string, DataType<string, string>>;
-export type PgTableConstraints = unknown;
 export type PgTableDefinition<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
@@ -119,13 +118,16 @@ export type UpdateSchema<ColumnDefinition extends PgTableColumnDefinition> =
 export type PgTable<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
-> = PgTableDefinition<TableName, ColumnDefinition> & {};
+> = PgTableDefinition<TableName, ColumnDefinition> & {
+  constraints: PgTableConstraint[];
+  refine: () => TableRefinement;
+};
 export type PgTableConstraintsCallback<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
 > = (
   table: PgTableDefinition<TableName, ColumnDefinition>,
-) => PgTableConstraints[];
+) => PgTableConstraint[];
 
 export type PgKnownTypes =
   | "bigint"
@@ -142,7 +144,8 @@ export type PgKnownTypes =
   | "numeric"
   | "double precision"
   | "serial"
-  | "uuid";
+  | "uuid"
+  | "smallint";
 
 export type PgKnownKeywords =
   | "CURRENT_DATE"
@@ -158,6 +161,61 @@ export type SQLExpression =
   | number
   | boolean
   | TemplateStringsArray;
+
+export type PgForeignKeyAction =
+  | "NO ACTION"
+  | "CASCADE"
+  | "SET NULL"
+  | "SET DEFAULT"
+  | "RESTRICT";
+
+export type PgUniqueConstraint = {
+  kind: "unique";
+  name?: string;
+  columns: string[];
+};
+
+export type PgPrimaryKeyConstraint = {
+  kind: "primary_key";
+  name?: string;
+  columns: string[];
+};
+
+export type PgCheckConstraint = {
+  kind: "check";
+  name?: string;
+  expression: SQLExpression;
+  predicate?: (row: Record<string, unknown>) => boolean;
+};
+
+export type PgForeignKeyConstraint = {
+  kind: "foreign_key";
+  name?: string;
+  columns: string[];
+  references: {
+    table: PgIdentifier;
+    columns: string[];
+    onDelete?: PgForeignKeyAction;
+    onUpdate?: PgForeignKeyAction;
+  };
+};
+
+export type PgTableConstraint =
+  | PgUniqueConstraint
+  | PgPrimaryKeyConstraint
+  | PgCheckConstraint
+  | PgForeignKeyConstraint;
+
+export type TableRefinement = (
+  value: Record<string, unknown>,
+  ctx: {
+    addIssue: (issue: {
+      code: string;
+      path?: (string | number)[];
+      message: string;
+    }) => void;
+  },
+) => void;
 
 export type TableColumn<
   Table extends PgIdentifier,

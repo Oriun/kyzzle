@@ -1,17 +1,30 @@
-import type { PgIdentifier, PgTableDefinition } from "./types";
+import type {
+  PgIdentifier,
+  PgTableConstraint,
+  PgTableDefinition,
+} from "./types";
 import { sql } from "./utils";
+import { renderConstraintExpression } from "./constraints";
 
-export function serializeTable(table: PgTableDefinition<any, any>): string {
+export function serializeTable(
+  table: PgTableDefinition<any, any> & { constraints?: PgTableConstraint[] },
+): string {
   return serializeCreateTable(table);
 }
 
 function serializeCreateTable(
-  table: PgTableDefinition<PgIdentifier, any>,
-  constraints: any[] = [],
+  table: PgTableDefinition<PgIdentifier, any> & {
+    constraints?: PgTableConstraint[];
+  },
+  constraints: PgTableConstraint[] = [],
 ): string {
   const columns = Object.values(table);
   const tableName = columns[0]?.table;
   if (!tableName) throw new Error("Table name is required");
+  const constraintDefinitions =
+    constraints.length > 0
+      ? constraints
+      : ((table as { constraints?: PgTableConstraint[] }).constraints ?? []);
   return sql`
     CREATE TABLE IF NOT EXISTS ${serializeName(tableName)} (
       ${[
@@ -30,7 +43,9 @@ function serializeCreateTable(
               .filter(Boolean)
               .join(" ")}`,
         ),
-        ...constraints,
+        ...constraintDefinitions.map((constraint) =>
+          serializeConstraint(constraint),
+        ),
       ].join(",\n")}
     );
   `;
@@ -41,4 +56,47 @@ function serializeName(name: PgIdentifier | string): string {
     .split(".")
     .map((s) => `"${s}"`)
     .join(".");
+}
+
+function serializeConstraint(constraint: PgTableConstraint): string {
+  const columns = (cols: string[]) =>
+    `(${cols.map((col) => `"${col}"`).join(", ")})`;
+
+  switch (constraint.kind) {
+    case "unique":
+      return [
+        constraint.name && `CONSTRAINT "${constraint.name}"`,
+        `UNIQUE ${columns(constraint.columns)}`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+    case "primary_key":
+      return [
+        constraint.name && `CONSTRAINT "${constraint.name}"`,
+        `PRIMARY KEY ${columns(constraint.columns)}`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+    case "check":
+      return [
+        constraint.name && `CONSTRAINT "${constraint.name}"`,
+        `CHECK (${renderConstraintExpression(constraint.expression)})`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+    case "foreign_key": {
+      const parts = [
+        constraint.name && `CONSTRAINT "${constraint.name}"`,
+        `FOREIGN KEY ${columns(constraint.columns)}`,
+        `REFERENCES ${serializeName(constraint.references.table)} ${columns(constraint.references.columns)}`,
+      ];
+      if (constraint.references.onDelete)
+        parts.push(`ON DELETE ${constraint.references.onDelete}`);
+      if (constraint.references.onUpdate)
+        parts.push(`ON UPDATE ${constraint.references.onUpdate}`);
+      return parts.filter(Boolean).join(" ");
+    }
+    default:
+      return "";
+  }
 }
