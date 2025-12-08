@@ -162,8 +162,8 @@ export async function listTableItems(
               JOIN pg_class tbl ON tbl.oid = tg.tgrelid
               JOIN pg_namespace nsp ON nsp.oid = tbl.relnamespace
               WHERE NOT tg.tgisinternal
-                AND tbl.relname = 'aggregation_entities'
-                AND nsp.nspname = 'funnel'
+                AND tbl.relname = $2
+                AND nsp.nspname = $1
               ORDER BY tg.tgname asc
             ) as triggers
         )
