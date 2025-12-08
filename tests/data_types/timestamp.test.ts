@@ -1,4 +1,5 @@
 import {
+  array,
   pgTable,
   selectSchema,
   timestamp,
@@ -78,7 +79,6 @@ suite("Timestamp data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { occurredAt: new Date("2024-06-01T00:00:00.000Z") },
-      { occurredAt: null },
     ];
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = {
       // @ts-expect-error defaults expect Date or null, not strings
@@ -96,7 +96,7 @@ suite("Timestamp data type", async () => {
     };
 
     const ArrayTimestampsType = pgTable("public.array_ts", {
-      occurredAt: timestamp("occurred_at").array(),
+      occurredAt: array(timestamp("occurred_at")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayTimestampsType>>;
     const _validArraySelect: ArraySelect[] = [
@@ -192,7 +192,7 @@ suite("Timestamp data type", async () => {
 
     await test("array and primary key modifiers", (t: TestContext) => {
       const ArrayTimestamps = pgTable("public.timestamp_array_first", {
-        occurredAt: timestamp("occurred_at").array().notNull(),
+        occurredAt: array(timestamp("occurred_at")).notNull(),
       });
       const PrimaryTimestamp = pgTable("public.timestamp_primary", {
         occurredAt: timestamp("occurred_at").primaryKey(),

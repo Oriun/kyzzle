@@ -1,4 +1,5 @@
 import {
+  array,
   bool,
   insertSchema,
   pgTable,
@@ -51,7 +52,7 @@ suite("Boolean data type", async () => {
     const _invalidGeneratedUpdate: GeneratedUpdate = { active: true };
 
     const ArrayFlags = pgTable("public.flags_array", {
-      active: bool("active").array().notNull(),
+      active: array(bool("active")).notNull(),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayFlags>>;
     const _validArraySelect: ArraySelect[] = [{ active: [true, null] }];
@@ -117,21 +118,6 @@ suite("Boolean data type", async () => {
         shape(OrderedFlags.active.type),
         shape(ReorderedFlags.active.type),
       );
-    });
-
-    await test("array vs not-null order is respected", (t: TestContext) => {
-      const arrayThenNotNull = pgTable("public.bool_array_first", {
-        values: bool("values").array().notNull(),
-      });
-      const notNullThenArray = pgTable("public.bool_notnull_first", {
-        values: bool("values").notNull().array(),
-      });
-
-      t.assert.ok(arrayThenNotNull.values.type.isArray);
-      t.assert.strictEqual(arrayThenNotNull.values.type.isNotNull, true);
-
-      t.assert.ok(notNullThenArray.values.type.isArray);
-      t.assert.strictEqual(notNullThenArray.values.type.isNotNull, false);
     });
 
     await test("override and generated modifiers plug into schemas", (t: TestContext) => {

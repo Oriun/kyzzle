@@ -11,6 +11,7 @@ import {
   Timestamp,
   UserDefined,
 } from "./pg_types";
+export { ArrayType, array } from "./array";
 
 export const bigint = <T extends string>(name: T) =>
   new Integer(name, { size: 8 });

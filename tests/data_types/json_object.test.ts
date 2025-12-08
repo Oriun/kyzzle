@@ -1,4 +1,10 @@
-import { jsonb, pgTable, selectSchema, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  jsonb,
+  pgTable,
+  selectSchema,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 import { number, object, string } from "zod";
@@ -74,12 +80,13 @@ suite("JsonObject data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { payload: { foo: "baz", count: 1 } },
-      { payload: null },
     ];
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = {
       // @ts-expect-error defaults expect object payloads or null, not strings
       payload: "oops",
     };
+    // @ts-expect-error null cannot be provided when a default exists
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { payload: null };
 
     const ImmutableJson = pgTable("public.immutable_json", {
       payload: jsonb("payload", payloadSchema).immutable(),
@@ -92,7 +99,7 @@ suite("JsonObject data type", async () => {
     };
 
     const ArrayJson = pgTable("public.array_json", {
-      payload: jsonb("payload", payloadSchema).array(),
+      payload: array(jsonb("payload", payloadSchema)),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayJson>>;
     const _validArraySelect: ArraySelect[] = [
@@ -154,7 +161,7 @@ suite("JsonObject data type", async () => {
 
     await test("array, override, and generated modifiers", (t: TestContext) => {
       const ArrayFirst = pgTable("public.json_array_first", {
-        payload: jsonb("payload", payloadSchema).array().notNull(),
+        payload: array(jsonb("payload", payloadSchema)).notNull(),
       });
       const OverrideJson = pgTable("public.json_override", {
         payload: jsonb("payload", payloadSchema).override((schema) =>

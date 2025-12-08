@@ -1,4 +1,4 @@
-import type { ZodNumber, ZodString, ZodType } from "zod";
+import type { ZodNumber, ZodString, ZodType, output } from "zod";
 import type {
   ParametersWithTypeImpact,
   PgKnownTypes,
@@ -144,7 +144,13 @@ export class JsonObject<
   T extends string,
   Mode extends "json" | "jsonb",
   Schema extends ZodType,
-> extends DataType<T, Mode, Schema> {
+> extends DataType<
+  T,
+  Mode,
+  Schema,
+  ParametersWithTypeImpact,
+  output<Schema> | SQLExpression
+> {
   public zodSchema: Schema;
   constructor(name: T, parameters: { mode: Mode; schema: Schema }) {
     super(name, parameters.mode);
@@ -296,7 +302,7 @@ export class UserDefined<
   Type extends string,
   Schema extends ZodType,
   Parameters extends ParametersWithTypeImpact = {},
-  DefaultType = SQLExpression,
+  DefaultType = output<Schema> | SQLExpression,
 > extends DataType<T, Type, Schema, Parameters, DefaultType> {
   public zodSchema: Schema;
   constructor(name: T, parameters: { type: Type; schema: Schema }) {

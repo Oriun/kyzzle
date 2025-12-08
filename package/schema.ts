@@ -24,8 +24,6 @@ export function selectSchema<
       entries(table).map(([name, column]) => {
         let schema: ZodType = column.type.zodSchema;
 
-        if (column.type.isArray) schema = schema.array();
-
         if (!column.type.isNotNull && !isNullable(column.type.zodSchema))
           schema = schema.nullable();
 
@@ -52,8 +50,6 @@ export function insertSchema<
         })
         .map(([name, column]) => {
           let schema: ZodType = column.type.zodSchema;
-
-          if (column.type.isArray) schema = schema.array();
 
           if (!column.type.isNotNull) schema = schema.nullable();
 
@@ -89,8 +85,6 @@ export function updateSchema<
         })
         .map(([name, column]) => {
           let schema: ZodType = column.type.zodSchema;
-
-          if (column.type.isArray) schema = schema.array();
 
           if (!column.type.isNotNull) schema = schema.nullable();
 

@@ -1,4 +1,10 @@
-import { char, pgTable, selectSchema, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  char,
+  pgTable,
+  selectSchema,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 import { string } from "zod";
@@ -56,8 +62,9 @@ suite("BoundedString data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { code: "BB" },
-      { code: null },
     ];
+    // @ts-expect-error null cannot be used when a default is present
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { code: null };
     // @ts-expect-error defaults expect strings or null, not numbers
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = { code: 1 };
 
@@ -70,7 +77,7 @@ suite("BoundedString data type", async () => {
     const _invalidImmutableUpdate: ImmutableUpdate = { code: "CC" };
 
     const ArrayCodes = pgTable("public.array_codes", {
-      code: char("code", { length: 2 }).array(),
+      code: array(char("code", { length: 2 })),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayCodes>>;
     const _validArraySelect: ArraySelect[] = [{ code: ["AA", null] }];
@@ -131,21 +138,6 @@ suite("BoundedString data type", async () => {
         shape(OrderedCodes.code.type),
         shape(ReorderedCodes.code.type),
       );
-    });
-
-    await test("array vs not-null order is captured", (t: TestContext) => {
-      const arrayThenNotNull = pgTable("public.bounded_code_array_first", {
-        codes: char("codes", { length: 2 }).array().notNull(),
-      });
-      const notNullThenArray = pgTable("public.bounded_code_notnull_first", {
-        codes: char("codes", { length: 2 }).notNull().array(),
-      });
-
-      t.assert.ok(arrayThenNotNull.codes.type.isArray);
-      t.assert.strictEqual(arrayThenNotNull.codes.type.isNotNull, true);
-
-      t.assert.ok(notNullThenArray.codes.type.isArray);
-      t.assert.strictEqual(notNullThenArray.codes.type.isNotNull, false);
     });
 
     await test("override and generated modifiers work together", (t: TestContext) => {

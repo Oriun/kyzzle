@@ -1,4 +1,5 @@
 import {
+  array,
   doublePrecision,
   insertSchema,
   pgTable,
@@ -50,7 +51,7 @@ suite("UnParametered data type", async () => {
     const _validGeneratedSelect: GeneratedSelect[] = [{ id: randomUUID() }];
     const _invalidGeneratedSelect: GeneratedSelect = {
       // @ts-expect-error generated column still resolves to string
-      id: null,
+      id: 42,
     };
 
     type GeneratedInsert = Insertable<ToTableType<typeof GeneratedUuid>>;
@@ -72,7 +73,7 @@ suite("UnParametered data type", async () => {
     const _invalidImmutableUpdate: ImmutableUpdate = { amount: 2.5 };
 
     const ArrayUuids = pgTable("public.array_uuids", {
-      ids: uuid("ids").array(),
+      ids: array(uuid("ids")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayUuids>>;
     const _validArraySelect: ArraySelect[] = [{ ids: [randomUUID(), null] }];
@@ -138,10 +139,10 @@ suite("UnParametered data type", async () => {
 
     await test("array, generated, and override modifiers", (t: TestContext) => {
       const arrayThenNotNull = pgTable("public.uuid_array_first", {
-        ids: uuid("ids").array().notNull(),
+        ids: array(uuid("ids")).notNull(),
       });
       const notNullThenArray = pgTable("public.uuid_notnull_first", {
-        ids: uuid("ids").notNull().array(),
+        ids: array(uuid("ids").notNull()),
       });
       const GeneratedDouble = pgTable("public.double_generated", {
         amount:

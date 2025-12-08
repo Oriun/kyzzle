@@ -1,5 +1,6 @@
 export * from "./definition";
 export { DataType } from "./data_types/base";
+export * from "./data_types/array";
 export * from "./data_types/helpers";
 export * from "./types";
 export * from "./constraints";

@@ -1,4 +1,10 @@
-import { numeric, pgTable, selectSchema, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  numeric,
+  pgTable,
+  selectSchema,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 
@@ -50,13 +56,11 @@ suite("Numeric data type", async () => {
       id: numeric("id").primaryKey().default(1),
     });
     type DefaultPrimaryInsert = Insertable<ToTableType<typeof DefaultPrimary>>;
-    const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
-      {},
-      { id: 2 },
-      { id: null },
-    ];
+    const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [{}, { id: 2 }];
     // @ts-expect-error defaults expect numeric or null, not strings
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = { id: "3" };
+    // @ts-expect-error null cannot be provided when a default exists
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { id: null };
 
     const ImmutableNumeric = pgTable("public.immutable_numeric", {
       amount: numeric("amount").immutable(),
@@ -67,7 +71,7 @@ suite("Numeric data type", async () => {
     const _invalidImmutableUpdate: ImmutableUpdate = { amount: 4 };
 
     const ArrayNumeric = pgTable("public.array_numeric", {
-      amount: numeric("amount").array(),
+      amount: array(numeric("amount")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayNumeric>>;
     const _validArraySelect: ArraySelect[] = [{ amount: [1, null] }];
@@ -163,7 +167,7 @@ suite("Numeric data type", async () => {
 
     await test("array, override, and generated modifiers", (t: TestContext) => {
       const ArrayNumerics = pgTable("public.numeric_array_first", {
-        amounts: numeric("amounts").array().notNull(),
+        amounts: array(numeric("amounts")).notNull(),
       });
       const OverrideNumerics = pgTable("public.numeric_override", {
         amount: numeric("amount").override((schema) => schema.lte(2)),

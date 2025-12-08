@@ -1,4 +1,10 @@
-import { date, pgTable, selectSchema, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  date,
+  pgTable,
+  selectSchema,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 
@@ -55,12 +61,13 @@ suite("PgDate data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { happenedOn: new Date() },
-      { happenedOn: null },
     ];
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = {
       // @ts-expect-error defaults expect Date or null, not strings
       happenedOn: "today",
     };
+    // @ts-expect-error null cannot be inserted when a default is set
+    const _nullDefaultInsert: DefaultPrimaryInsert = { happenedOn: null };
 
     const ImmutableDates = pgTable("public.immutable_dates", {
       happenedOn: date("happened_on").immutable(),
@@ -73,7 +80,7 @@ suite("PgDate data type", async () => {
     };
 
     const ArrayDates = pgTable("public.array_dates", {
-      happenedOn: date("happened_on").array(),
+      happenedOn: array(date("happened_on")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayDates>>;
     const _validArraySelect: ArraySelect[] = [
@@ -157,10 +164,10 @@ suite("PgDate data type", async () => {
 
     await test("array modifier keeps explicit nullability order", (t: TestContext) => {
       const arrayThenNotNull = pgTable("public.date_array_first", {
-        happenedOn: date("happened_on").array().notNull(),
+        happenedOn: array(date("happened_on")).notNull(),
       });
       const notNullThenArray = pgTable("public.date_notnull_first", {
-        happenedOn: date("happened_on").notNull().array(),
+        happenedOn: array(date("happened_on").notNull()),
       });
 
       t.assert.ok(arrayThenNotNull.happenedOn.type.isArray);

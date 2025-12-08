@@ -1,4 +1,10 @@
-import { custom, pgTable, selectSchema, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  custom,
+  pgTable,
+  selectSchema,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 import { number, object, string } from "zod";
@@ -75,12 +81,13 @@ suite("UserDefined data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { balance: { amount: 10, currency: "EUR" } },
-      { balance: null },
     ];
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = {
       // @ts-expect-error defaults expect object payloads or null, not strings
       balance: "oops",
     };
+    // @ts-expect-error null cannot be provided when a default exists
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { balance: null };
 
     const ImmutableWallets = pgTable("finance.immutable_wallets", {
       balance: Money("balance").immutable(),
@@ -93,7 +100,7 @@ suite("UserDefined data type", async () => {
     };
 
     const ArrayWalletsType = pgTable("finance.array_wallets_type", {
-      balance: Money("balance").array(),
+      balance: array(Money("balance")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayWalletsType>>;
     const _validArraySelect: ArraySelect[] = [
@@ -162,7 +169,7 @@ suite("UserDefined data type", async () => {
 
     await test("array and override modifiers are honored", (t: TestContext) => {
       const ArrayWallets = pgTable("finance.wallet_arrays", {
-        balance: Money("balance").array().notNull(),
+        balance: array(Money("balance")).notNull(),
       });
       const OverrideWallets = pgTable("finance.wallet_override", {
         balance: Money("balance").override((schema) =>

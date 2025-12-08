@@ -51,21 +51,6 @@ export abstract class DataType<
         keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
       >;
   }
-  array() {
-    this.isArray = true;
-    this.isNotNull = false;
-    return this as unknown as DataType<
-      T,
-      PgType,
-      ZodschemaType,
-      Parameters & { isNotNull: false; isArray: true },
-      DefaultType
-    > &
-      Omit<
-        typeof this,
-        keyof DataType<T, PgType, ZodschemaType, Parameters, DefaultType>
-      >;
-  }
   unique() {
     this.isUnique = true;
     return this as unknown as DataType<

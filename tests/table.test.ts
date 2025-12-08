@@ -167,10 +167,8 @@ suite("Create Table", async () => {
           providerId: "p-rovi-derid",
         },
         {
-          id: null,
+          id: randomUUID(),
           name: "My Company",
-          companyId: null,
-          providerId: null,
         },
         {
           id: randomUUID(),

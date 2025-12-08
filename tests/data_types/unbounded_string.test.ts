@@ -1,4 +1,10 @@
-import { pgTable, selectSchema, text, type ToTableType } from "kyzzle_test";
+import {
+  array,
+  pgTable,
+  selectSchema,
+  text,
+  type ToTableType,
+} from "kyzzle_test";
 import { type Insertable, type Selectable, type Updateable } from "kysely";
 import { suite, test, type TestContext } from "node:test";
 
@@ -55,10 +61,11 @@ suite("UnBoundedString data type", async () => {
     const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
       {},
       { title: "gone" },
-      { title: null },
     ];
     // @ts-expect-error defaults expect strings or null, not numbers
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = { title: 123 };
+    // @ts-expect-error null cannot be provided when a default is configured
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { title: null };
 
     const ImmutableNotes = pgTable("public.immutable_notes", {
       title: text("title").immutable(),
@@ -69,7 +76,7 @@ suite("UnBoundedString data type", async () => {
     const _invalidImmutableUpdate: ImmutableUpdate = { title: "edit" };
 
     const ArrayNotesType = pgTable("public.array_notes_type", {
-      title: text("title").array(),
+      title: array(text("title")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayNotesType>>;
     const _validArraySelect: ArraySelect[] = [{ title: ["hey", null] }];
@@ -152,7 +159,7 @@ suite("UnBoundedString data type", async () => {
 
     await test("array and generated modifiers", (t: TestContext) => {
       const ArrayNotes = pgTable("public.unbounded_array_first", {
-        title: text("title").array().notNull(),
+        title: array(text("title")).notNull(),
       });
       const GeneratedNotes = pgTable("public.unbounded_generated", {
         title: text("title").generatedAlwaysAs("upper('abc')"),

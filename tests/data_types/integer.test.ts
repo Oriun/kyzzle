@@ -1,4 +1,5 @@
 import {
+  array,
   bigint,
   integer,
   pgTable,
@@ -62,13 +63,11 @@ suite("Integer data type", async () => {
       id: integer("id").primaryKey().default(1),
     });
     type DefaultPrimaryInsert = Insertable<ToTableType<typeof DefaultPrimary>>;
-    const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [
-      {},
-      { id: 2 },
-      { id: null },
-    ];
+    const _validDefaultPrimaryInsert: DefaultPrimaryInsert[] = [{}, { id: 2 }];
     // @ts-expect-error defaults expect numeric or null, not strings
     const _invalidDefaultPrimaryInsert: DefaultPrimaryInsert = { id: "3" };
+    // @ts-expect-error null cannot be provided when a default exists
+    const _nullDefaultPrimaryInsert: DefaultPrimaryInsert = { id: null };
 
     const ImmutableIntegers = pgTable("public.immutable_integers", {
       value: integer("value").immutable(),
@@ -79,7 +78,7 @@ suite("Integer data type", async () => {
     const _invalidImmutableUpdate: ImmutableUpdate = { value: 9 };
 
     const ArrayIntegers = pgTable("public.array_integers", {
-      value: integer("value").array(),
+      value: array(integer("value")),
     });
     type ArraySelect = Selectable<ToTableType<typeof ArrayIntegers>>;
     const _validArraySelect: ArraySelect[] = [{ value: [1, null] }];
@@ -161,7 +160,7 @@ suite("Integer data type", async () => {
 
     await test("array, override, and generated modifiers combine", (t: TestContext) => {
       const ArrayIntegers = pgTable("public.integers_array_first", {
-        values: integer("values").array().notNull(),
+        values: array(integer("values")).notNull(),
       });
       const OverrideIntegers = pgTable("public.integers_override", {
         value: integer("value").override((schema) => schema.gte(0).lte(5)),
