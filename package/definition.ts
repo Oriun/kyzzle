@@ -19,7 +19,12 @@ import {
 } from "./utils";
 import { enum as _enum, object, type output, type ZodType } from "zod";
 import { selectSchema } from "./schema";
-import { normalizeConstraints, registerTableConstraints } from "./constraints";
+import {
+  normalizeConstraints,
+  registerTableConstraints,
+  registerTableIndexes,
+  registerTableTriggers,
+} from "./constraints";
 
 type CompositeDefaultInput<FieldsDefinition extends PgTableColumnDefinition> =
   Partial<{
@@ -134,13 +139,27 @@ export function pgTable<
       ];
     }),
   );
+  const rawDefinitions =
+    _constraints?.(table as PgTableDefinition<TableName, ColumnDefinition>) ??
+    [];
+  const allDefinitions = Array.isArray(rawDefinitions) ? rawDefinitions : [];
   const constraints = normalizeConstraints(
     tableName,
     Object.values(table).map((col) => ({ name: col.name })),
-    _constraints?.(table as PgTableDefinition<TableName, ColumnDefinition>) ??
-      [],
+    allDefinitions,
+  );
+  const extras = allDefinitions;
+  const indexes = extras.filter(
+    (extra): extra is import("./types").PgIndexDefinition =>
+      (extra as any).kind === "index",
+  );
+  const triggers = extras.filter(
+    (extra): extra is import("./types").PgTriggerDefinition =>
+      (extra as any).kind === "trigger",
   );
   registerTableConstraints(table, constraints);
+  registerTableIndexes(table, indexes);
+  registerTableTriggers(table, triggers);
   return Object.defineProperties(table, {
     __brand: {
       value: "Table",

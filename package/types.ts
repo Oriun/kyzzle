@@ -131,7 +131,9 @@ export type PgTableConstraintsCallback<
   ColumnDefinition extends PgTableColumnDefinition,
 > = (
   table: PgTableDefinition<TableName, ColumnDefinition>,
-) => PgTableConstraint[];
+) =>
+  | PgTableConstraint[]
+  | (PgTableConstraint | PgIndexDefinition | PgTriggerDefinition)[];
 
 export type PgKnownTypes =
   | "bigint"
@@ -202,6 +204,25 @@ export type PgForeignKeyConstraint = {
     onDelete?: PgForeignKeyAction;
     onUpdate?: PgForeignKeyAction;
   };
+};
+
+export type PgIndexDefinition = {
+  kind: "index";
+  name?: string;
+  columns: string[];
+  unique?: boolean;
+  using?: string;
+  include?: string[];
+  where?: SQLExpression;
+};
+
+export type PgTriggerDefinition = {
+  kind: "trigger";
+  name: string;
+  timing: "BEFORE" | "AFTER" | "INSTEAD OF";
+  events: ("INSERT" | "UPDATE" | "DELETE" | "TRUNCATE")[];
+  function: { schema?: string; name: string; args?: (string | number)[] };
+  when?: SQLExpression;
 };
 
 export type PgTableConstraint =

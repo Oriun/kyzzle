@@ -5,10 +5,14 @@ import {
   pgTable,
   primaryKey,
   serializeTable,
+  serializeIndexes,
+  serializeTriggers,
   text,
   tableRefinement,
+  trigger,
   unique,
   uuid,
+  index,
 } from "kyzzle_test";
 import { randomUUID } from "node:crypto";
 import { suite, test, type TestContext } from "node:test";
@@ -49,6 +53,116 @@ suite("Constraints", async () => {
     );
   });
 
+  await suite("indexes serialization", async () => {
+    await test("serializes basic unique index", (t: TestContext) => {
+      const Logs = pgTable(
+        "public.logs_indexes_basic",
+        {
+          id: uuid("id").notNull(),
+          userId: uuid("user_id").notNull(),
+        },
+        (table) => [index("logs_user_idx", { unique: true }).on(table.userId)],
+      );
+
+      const indexes = serializeIndexes(Logs);
+
+      t.assert.strictEqual(indexes.length, 1);
+      t.assert.match(
+        indexes[0],
+        /CREATE UNIQUE INDEX "logs_user_idx" ON "public"\."logs_indexes_basic" \("user_id"\)\s*;/,
+      );
+    });
+
+    await test("supports using/include/where options and unnamed indexes", (t: TestContext) => {
+      const Logs = pgTable(
+        "public.logs_indexes_options",
+        {
+          id: uuid("id").notNull(),
+          message: text("message"),
+          metadata: text("metadata"),
+        },
+        (table) => [
+          index(undefined, {
+            using: "gin",
+            include: [table.id.name],
+            where: "message IS NOT NULL",
+          }).on(table.message),
+          index("logs_covering_idx")
+            .on(table.id, table.message)
+            .includeColumns(table.metadata),
+        ],
+      );
+
+      const indexes = serializeIndexes(Logs);
+
+      t.assert.strictEqual(indexes.length, 2);
+      t.assert.match(
+        indexes[0],
+        /CREATE INDEX IF NOT EXISTS ON "public"\."logs_indexes_options" USING gin \("message"\) INCLUDE \("id"\) WHERE message IS NOT NULL\s*;/,
+      );
+      t.assert.match(
+        indexes[1],
+        /CREATE INDEX "logs_covering_idx" ON "public"\."logs_indexes_options" \("id", "message"\) INCLUDE \("metadata"\)\s*;/,
+      );
+    });
+  });
+
+  await suite("triggers serialization", async () => {
+    await test("serializes minimal trigger", (t: TestContext) => {
+      const Logs = pgTable(
+        "public.logs_triggers_basic",
+        {
+          id: uuid("id").notNull(),
+          message: text("message"),
+        },
+        (table) => [
+          trigger({
+            name: "logs_notify",
+            when: "AFTER",
+            action: ["INSERT"],
+            execute: "notify_logs",
+          }),
+        ],
+      );
+
+      const triggers = serializeTriggers(Logs);
+
+      t.assert.strictEqual(triggers.length, 1);
+      t.assert.match(
+        triggers[0],
+        /CREATE TRIGGER "logs_notify" AFTER INSERT ON "public"\."logs_triggers_basic" FOR EACH ROW EXECUTE FUNCTION "notify_logs"\(\)\s*;/,
+      );
+    });
+
+    await test("serializes trigger with schema, args and WHEN", (t: TestContext) => {
+      const Logs = pgTable(
+        "public.logs_triggers_options",
+        {
+          id: uuid("id").notNull(),
+          userId: uuid("user_id"),
+        },
+        (table) => [
+          trigger({
+            name: "logs_audit",
+            when: "BEFORE",
+            action: ["UPDATE", "DELETE"],
+            execute: "audit.write_audit",
+            with: ["logs", 1],
+            condition: "OLD.id IS NOT NULL",
+          }),
+        ],
+      );
+
+      const triggers = serializeTriggers(Logs);
+
+      t.assert.strictEqual(triggers.length, 1);
+      t.assert.match(
+        triggers[0],
+        /CREATE TRIGGER "logs_audit" BEFORE UPDATE OR DELETE ON "public"\."logs_triggers_options" FOR EACH ROW WHEN \(OLD\.id IS NOT NULL\) EXECUTE FUNCTION "audit"\."write_audit"\('logs', 1\)\s*;/,
+      );
+    });
+  });
+
   await suite("refine helper", async () => {
     const Roles = pgTable(
       "public.roles_constraints",
@@ -73,27 +187,34 @@ suite("Constraints", async () => {
     await test("runs opt-in refinements", (t: TestContext) => {
       const schema = insertSchema(Roles).superRefine(tableRefinement(Roles)!);
 
-      t.assert.strictEqual(
-        schema.safeParse({ id: randomUUID(), name: "ok" }).success,
-        true,
+      t.assert.partialDeepStrictEqual(
+        schema.safeParse({ id: randomUUID(), name: "ok" }),
+        {
+          success: true,
+        },
       );
-      t.assert.strictEqual(
-        schema.safeParse({ id: randomUUID(), name: "forbidden" }).success,
-        false,
+      t.assert.partialDeepStrictEqual(
+        schema.safeParse({ id: randomUUID(), name: "forbidden" }),
+        {
+          success: false,
+        },
       );
-      t.assert.strictEqual(
-        schema.safeParse({ id: randomUUID(), name: "ok", orgId: randomUUID() })
-          .success,
-        false,
+      t.assert.partialDeepStrictEqual(
+        schema.safeParse({ id: randomUUID(), name: "ok", orgId: randomUUID() }),
+        {
+          success: true,
+        },
       );
-      t.assert.strictEqual(
+      t.assert.partialDeepStrictEqual(
         schema.safeParse({
           id: randomUUID(),
           name: "ok",
           orgId: randomUUID(),
           teamId: randomUUID(),
-        }).success,
-        true,
+        }),
+        {
+          success: true,
+        },
       );
     });
   });

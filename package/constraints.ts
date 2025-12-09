@@ -1,7 +1,9 @@
 import type {
   PgForeignKeyAction,
   PgIdentifier,
+  PgIndexDefinition,
   PgTableConstraint,
+  PgTriggerDefinition,
   SQLExpression,
   TableColumn,
   TableRefinement,
@@ -12,6 +14,8 @@ type ConstraintPredicate = (row: Record<string, unknown>) => boolean;
 
 const tableConstraints = new WeakMap<object, PgTableConstraint[]>();
 const tableRefinements = new WeakMap<object, TableRefinement>();
+const tableIndexes = new WeakMap<object, PgIndexDefinition[]>();
+const tableTriggers = new WeakMap<object, PgTriggerDefinition[]>();
 
 class UniqueConstraint {
   public readonly kind = "unique";
@@ -96,6 +100,40 @@ class ForeignKeyConstraint {
   }
 }
 
+class IndexDefinition {
+  public readonly kind = "index";
+  public columns: string[] = [];
+  public unique?: boolean;
+  public using?: string;
+  public include?: string[];
+  public where?: SQLExpression;
+  constructor(
+    public readonly name?: string,
+    options: Omit<PgIndexDefinition, "kind" | "name" | "columns"> = {},
+  ) {
+    this.unique = options.unique;
+    this.using = options.using;
+    this.include = options.include;
+    this.where = options.where;
+  }
+  on<T extends PgIdentifier>(
+    first: TableColumn<T, string, string, any, any>,
+    ...rest: TableColumn<T, string, string, any, any>[]
+  ) {
+    if (this.columns.length) throw new Error("Index columns already defined");
+    this.columns = [first, ...rest].map((col) => col.name);
+    return this;
+  }
+  includeColumns(
+    ...columns: (string | TableColumn<any, string, string, any, any>)[]
+  ) {
+    this.include = columns.map((col) =>
+      typeof col === "string" ? col : col.name,
+    );
+    return this;
+  }
+}
+
 export const unique = (name?: string) => new UniqueConstraint(name);
 export const primaryKey = (name?: string) => new PrimaryKeyConstraint(name);
 export const check = (
@@ -104,6 +142,30 @@ export const check = (
   predicate?: ConstraintPredicate,
 ) => new CheckConstraint(name, expression, predicate);
 export const foreignKey = (name?: string) => new ForeignKeyConstraint(name);
+export const index = (
+  name?: string,
+  options?: Omit<PgIndexDefinition, "kind" | "name" | "columns">,
+) => new IndexDefinition(name, options);
+export const trigger = (options: {
+  name: string;
+  when: PgTriggerDefinition["timing"];
+  action: PgTriggerDefinition["events"];
+  execute: string;
+  with?: PgTriggerDefinition["function"]["args"];
+  condition?: SQLExpression;
+}): PgTriggerDefinition => {
+  const parts = options.execute.split(".");
+  const fnName = parts.pop() ?? options.execute;
+  const schema = parts.length ? parts.join(".") : undefined;
+  return {
+    kind: "trigger",
+    name: options.name,
+    timing: options.when,
+    events: options.action,
+    function: { schema, name: fnName, args: options.with },
+    when: options.condition,
+  };
+};
 
 export const registerTableConstraints = (
   table: object,
@@ -117,51 +179,69 @@ export const getTableConstraints = (table: object) =>
   tableConstraints.get(table);
 export const tableRefinement = (table: object): TableRefinement | undefined =>
   tableRefinements.get(table);
+export const registerTableIndexes = (
+  table: object,
+  indexes: PgIndexDefinition[],
+) => tableIndexes.set(table, indexes);
+export const getTableIndexes = (table: object) => tableIndexes.get(table);
+export const registerTableTriggers = (
+  table: object,
+  triggers: PgTriggerDefinition[],
+) => tableTriggers.set(table, triggers);
+export const getTableTriggers = (table: object) => tableTriggers.get(table);
 
 export function normalizeConstraints(
   tableName: PgIdentifier,
   tableColumns: { name: string }[],
-  constraints: PgTableConstraint[],
+  constraints: (PgTableConstraint | PgIndexDefinition | PgTriggerDefinition)[],
 ): PgTableConstraint[] {
-  return constraints.map((constraint) => {
-    switch (constraint.kind) {
-      case "unique":
-      case "primary_key":
-        if (!constraint.columns.length)
-          throw new Error(
-            `Constraint ${constraint.name ?? constraint.kind} on ${tableName} has no columns`,
-          );
-        validateColumns(tableName, tableColumns, constraint.columns);
-        return constraint;
-      case "check":
-        if (!constraint.expression)
-          throw new Error(
-            `Check constraint ${constraint.name ?? ""} on ${tableName} is missing expression`,
-          );
-        return constraint;
-      case "foreign_key":
-        if (!constraint.columns.length)
-          throw new Error(
-            `Foreign key ${constraint.name ?? ""} on ${tableName} has no columns`,
-          );
-        validateColumns(tableName, tableColumns, constraint.columns);
-        if (
-          !constraint.references?.table ||
-          !constraint.references.columns?.length ||
-          !isValidIdentifier(constraint.references.table)
-        )
-          throw new Error(
-            `Foreign key ${constraint.name ?? ""} on ${tableName} has invalid references`,
-          );
-        if (constraint.references.columns.length !== constraint.columns.length)
-          throw new Error(
-            `Foreign key ${constraint.name ?? ""} on ${tableName} must reference the same number of columns`,
-          );
-        return constraint;
-      default:
-        return constraint;
-    }
-  });
+  return constraints
+    .filter((constraint): constraint is PgTableConstraint =>
+      ["unique", "primary_key", "check", "foreign_key"].includes(
+        (constraint as any).kind,
+      ),
+    )
+    .map((constraint) => {
+      switch (constraint.kind) {
+        case "unique":
+        case "primary_key":
+          if (!constraint.columns.length)
+            throw new Error(
+              `Constraint ${constraint.name ?? constraint.kind} on ${tableName} has no columns`,
+            );
+          validateColumns(tableName, tableColumns, constraint.columns);
+          return constraint;
+        case "check":
+          if (!constraint.expression)
+            throw new Error(
+              `Check constraint ${constraint.name ?? ""} on ${tableName} is missing expression`,
+            );
+          return constraint;
+        case "foreign_key":
+          if (!constraint.columns.length)
+            throw new Error(
+              `Foreign key ${constraint.name ?? ""} on ${tableName} has no columns`,
+            );
+          validateColumns(tableName, tableColumns, constraint.columns);
+          if (
+            !constraint.references?.table ||
+            !constraint.references.columns?.length ||
+            !isValidIdentifier(constraint.references.table)
+          )
+            throw new Error(
+              `Foreign key ${constraint.name ?? ""} on ${tableName} has invalid references`,
+            );
+          if (
+            constraint.references.columns.length !== constraint.columns.length
+          )
+            throw new Error(
+              `Foreign key ${constraint.name ?? ""} on ${tableName} must reference the same number of columns`,
+            );
+          return constraint;
+        default:
+          return constraint;
+      }
+    });
 }
 
 export function constraintRefinement(
