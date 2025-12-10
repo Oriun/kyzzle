@@ -221,6 +221,7 @@ export type PgTriggerDefinition = {
   name: string;
   timing: "BEFORE" | "AFTER" | "INSTEAD OF";
   events: ("INSERT" | "UPDATE" | "DELETE" | "TRUNCATE")[];
+  forEach?: "ROW" | "STATEMENT" | (string & {});
   function: { schema?: string; name: string; args?: (string | number)[] };
   when?: SQLExpression;
 };

@@ -1,7 +1,9 @@
 import type {
   PgIdentifier,
+  PgIndexDefinition,
   PgTableConstraint,
   PgTableDefinition,
+  PgTriggerDefinition,
   TableColumn,
 } from "./types";
 import { isTableColumn, sql } from "./utils";
@@ -20,17 +22,11 @@ export function serializeTable(
 
 export function serializeIndexes(
   table: PgTableDefinition<any, any>,
-  indexes?: import("./types").PgIndexDefinition[],
+  indexes?: PgIndexDefinition[],
 ): string[] {
   const tableIndexes = indexes ?? getTableIndexes(table) ?? [];
   const tableName = (
-    Object.values(table)[0] as import("./types").TableColumn<
-      PgIdentifier,
-      string,
-      any,
-      any,
-      any
-    >
+    Object.values(table)[0] as TableColumn<PgIdentifier, string, any, any, any>
   )?.table;
   if (!tableName || !tableIndexes.length) return [];
   return tableIndexes.map((idx) =>
@@ -56,17 +52,11 @@ export function serializeIndexes(
 
 export function serializeTriggers(
   table: PgTableDefinition<any, any>,
-  triggers?: import("./types").PgTriggerDefinition[],
+  triggers?: PgTriggerDefinition[],
 ): string[] {
   const tableTriggers = triggers ?? getTableTriggers(table) ?? [];
   const tableName = (
-    Object.values(table)[0] as import("./types").TableColumn<
-      PgIdentifier,
-      string,
-      any,
-      any,
-      any
-    >
+    Object.values(table)[0] as TableColumn<PgIdentifier, string, any, any, any>
   )?.table;
   if (!tableName || !tableTriggers.length) return [];
   return tableTriggers.map((trg) =>
@@ -77,7 +67,7 @@ export function serializeTriggers(
       trg.events.join(" OR "),
       "ON",
       serializeName(tableName),
-      "FOR EACH ROW",
+      `FOR EACH ${trg.forEach ?? "ROW"}`,
       trg.when ? `WHEN (${renderConstraintExpression(trg.when)})` : undefined,
       "EXECUTE FUNCTION",
       `${trg.function.schema ? serializeName(trg.function.schema) + "." : ""}"${trg.function.name}"(${(

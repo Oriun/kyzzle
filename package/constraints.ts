@@ -146,22 +146,37 @@ export const index = (
   name?: string,
   options?: Omit<PgIndexDefinition, "kind" | "name" | "columns">,
 ) => new IndexDefinition(name, options);
-export const trigger = (options: {
-  name: string;
-  timing: PgTriggerDefinition["timing"];
-  events: PgTriggerDefinition["events"];
-  execute: string;
-  with?: PgTriggerDefinition["function"]["args"];
-  condition?: SQLExpression;
-}): PgTriggerDefinition => {
+type TriggerOptions =
+  | {
+      name: string;
+      when: PgTriggerDefinition["timing"];
+      action: PgTriggerDefinition["events"];
+      execute: string;
+      with?: PgTriggerDefinition["function"]["args"];
+      condition?: SQLExpression;
+      forEach?: PgTriggerDefinition["forEach"];
+    }
+  | {
+      name: string;
+      timing: PgTriggerDefinition["timing"];
+      events: PgTriggerDefinition["events"];
+      execute: string;
+      with?: PgTriggerDefinition["function"]["args"];
+      condition?: SQLExpression;
+      forEach?: PgTriggerDefinition["forEach"];
+    };
+export const trigger = (options: TriggerOptions): PgTriggerDefinition => {
   const parts = options.execute.split(".");
   const fnName = parts.pop() ?? options.execute;
   const schema = parts.length ? parts.join(".") : undefined;
+  const timing = "when" in options ? options.when : options.timing;
+  const events = "action" in options ? options.action : options.events;
   return {
     kind: "trigger",
     name: options.name,
-    timing: options.timing,
-    events: options.events,
+    timing,
+    events,
+    forEach: options.forEach ?? "ROW",
     function: { schema, name: fnName, args: options.with },
     when: options.condition,
   };

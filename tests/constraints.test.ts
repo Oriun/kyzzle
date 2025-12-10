@@ -161,6 +161,32 @@ suite("Constraints", async () => {
         /CREATE TRIGGER "logs_audit" BEFORE UPDATE OR DELETE ON "public"\."logs_triggers_options" FOR EACH ROW WHEN \(OLD\.id IS NOT NULL\) EXECUTE FUNCTION "audit"\."write_audit"\('logs', 1\)\s*;/,
       );
     });
+
+    await test("allows configuring trigger granularity", (t: TestContext) => {
+      const Logs = pgTable(
+        "public.logs_triggers_statement",
+        {
+          id: uuid("id").notNull(),
+        },
+        (table) => [
+          trigger({
+            name: "logs_statement",
+            when: "AFTER",
+            action: ["TRUNCATE"],
+            forEach: "STATEMENT",
+            execute: "log_truncate",
+          }),
+        ],
+      );
+
+      const triggers = serializeTriggers(Logs);
+
+      t.assert.strictEqual(triggers.length, 1);
+      t.assert.match(
+        triggers[0],
+        /CREATE TRIGGER "logs_statement" AFTER TRUNCATE ON "public"\."logs_triggers_statement" FOR EACH STATEMENT EXECUTE FUNCTION "log_truncate"\(\)\s*;/,
+      );
+    });
   });
 
   await suite("refine helper", async () => {
