@@ -148,8 +148,8 @@ export const index = (
 ) => new IndexDefinition(name, options);
 export const trigger = (options: {
   name: string;
-  when: PgTriggerDefinition["timing"];
-  action: PgTriggerDefinition["events"];
+  timing: PgTriggerDefinition["timing"];
+  events: PgTriggerDefinition["events"];
   execute: string;
   with?: PgTriggerDefinition["function"]["args"];
   condition?: SQLExpression;
@@ -160,8 +160,8 @@ export const trigger = (options: {
   return {
     kind: "trigger",
     name: options.name,
-    timing: options.when,
-    events: options.action,
+    timing: options.timing,
+    events: options.events,
     function: { schema, name: fnName, args: options.with },
     when: options.condition,
   };

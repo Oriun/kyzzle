@@ -9,6 +9,8 @@ import type {
   PgTableDefinition,
   PgTable,
   SQLExpression,
+  PgIndexDefinition,
+  PgTriggerDefinition,
 } from "./types";
 import {
   entries,
@@ -150,12 +152,10 @@ export function pgTable<
   );
   const extras = allDefinitions;
   const indexes = extras.filter(
-    (extra): extra is import("./types").PgIndexDefinition =>
-      (extra as any).kind === "index",
+    (extra): extra is PgIndexDefinition => (extra as any).kind === "index",
   );
   const triggers = extras.filter(
-    (extra): extra is import("./types").PgTriggerDefinition =>
-      (extra as any).kind === "trigger",
+    (extra): extra is PgTriggerDefinition => (extra as any).kind === "trigger",
   );
   registerTableConstraints(table, constraints);
   registerTableIndexes(table, indexes);
