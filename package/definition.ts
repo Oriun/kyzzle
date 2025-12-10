@@ -297,8 +297,6 @@ export function pgCompositeType<
   );
 }
 
-export function pgType() {}
 export function pgView() {}
 export function pgMatView() {}
 export function pgFunction() {}
-export function pgTrigger() {}
