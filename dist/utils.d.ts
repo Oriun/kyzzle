@@ -1,0 +1,16 @@
+import type { ZodType, ZodNullable } from "zod";
+import type { PgIdentifier } from "./types";
+export declare function entries<T extends Record<string, unknown> | object>(object: T): [keyof T & string, T[keyof T]][];
+export declare function fromEntries<T extends [string, unknown][]>(entries: T): Record<T[number][0], T[number][1]>;
+export declare function keys<T extends Record<string, unknown>>(object: T): (keyof T)[];
+export declare function pick<T extends object, S extends keyof T>(obj: T, ...properties: (S | (string & {}))[]): { [K in S]: T[S]; };
+export declare function omit<T extends object, S extends keyof T>(obj: T, ...properties: (S | (string & {}))[]): Omit<T, S> & { [key in S]: never; };
+export declare function isObject(data: unknown): data is Record<string, unknown>;
+export declare function clone<T>(object: T): T;
+export declare function isNullable<T extends ZodType>(schema: ZodType): schema is ZodNullable<T>;
+export declare function isValidIdentifier(str: string): str is PgIdentifier;
+export declare function filterFalsy<T>(array: T[]): T[];
+export declare function flatTemplateStringArray(template: TemplateStringsArray, ...args: any[]): string;
+export declare function sql(template: TemplateStringsArray, ...args: any[]): string;
+export declare function hasItems<T>(arr: T[]): arr is [T, ...T[]];
+export declare function isTableColumn(value: unknown): value is import("./types").TableColumn<import("./types").PgIdentifier, string, any, any, any>;
