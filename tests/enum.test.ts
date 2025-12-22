@@ -47,7 +47,7 @@ suite("Create Enum", async () => {
       CAPTURED: "CAPTURED",
       FAILED: "FAILED",
     } as const);
-
+ 
     await test("metadata", (t: TestContext) => {
       t.assert.strictEqual(PaymentStates.enumName, "billing.payment_state");
       t.assert.deepStrictEqual(PaymentStates.values, [
@@ -55,13 +55,26 @@ suite("Create Enum", async () => {
         "CAPTURED",
         "FAILED",
       ]);
-
+ 
       const column = PaymentStates("state");
       t.assert.ok(column instanceof DataType);
       t.assert.strictEqual(column.pgType, "billing.payment_state");
       t.assert.strictEqual(column.name, "state");
     });
-
+ 
+    await test("defaults to property key when name omitted", (t: TestContext) => {
+      const column = PaymentStates();
+      t.assert.ok(column instanceof DataType);
+      t.assert.strictEqual(column.name, undefined);
+ 
+      const Table = pgTable("billing.payments", {
+        status: PaymentStates(),
+      });
+ 
+      t.assert.strictEqual(Table.status.name, "status");
+      t.assert.strictEqual(Table.status.type.name, "status");
+    });
+ 
     await test("zod", (t: TestContext) => {
       const column = PaymentStates("state");
       t.assert.deepStrictEqual(column.zodSchema.safeParse("CREATED"), {
@@ -76,6 +89,7 @@ suite("Create Enum", async () => {
       });
     });
   });
+
 
   await suite("type inference", async () => {
     const Roles = pgEnumType("auth.roles", ["ADMIN", "MEMBER"] as const);

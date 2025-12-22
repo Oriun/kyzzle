@@ -15,13 +15,27 @@ suite("UserDefined data type", async () => {
     currency: string().length(3),
   });
   const Money = custom("finance.money", moneySchema);
-
+ 
   const Wallets = pgTable("finance.wallets", {
     balance: Money("balance").notNull(),
   });
   type WalletsTable = ToTableType<typeof Wallets>;
-
+ 
+  await test("defaults name from property when omitted", (t: TestContext) => {
+    const Table = pgTable("finance.auto_wallets", {
+      balance: Money(),
+      balances: array(Money()),
+    });
+ 
+    t.assert.strictEqual(Table.balance.name, "balance");
+    t.assert.strictEqual(Table.balance.type.name, "balance");
+    t.assert.strictEqual(Table.balances.name, "balances");
+    t.assert.strictEqual(Table.balances.type.name, "balances");
+    t.assert.strictEqual(Table.balances.type.item.name, "balances");
+  });
+ 
   await test("type inference", () => {
+
     type SelectRow = Selectable<WalletsTable>;
     const _validSelect: SelectRow[] = [
       { balance: { amount: 10, currency: "USD" } },
