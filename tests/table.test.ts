@@ -1,4 +1,5 @@
 import {
+  array,
   insertSchema,
   integer,
   pgTable,
@@ -55,6 +56,22 @@ suite("Create Table", async () => {
     t.assert.deepStrictEqual(keys, ["id", "name"]);
 
     t.assert.snapshot(table);
+  });
+
+  await test("should default names from property keys", (t: TestContext) => {
+    const table = pgTable("public.auto_names", {
+      id: uuid(),
+      displayName: text(),
+      tags: array(text()),
+    });
+
+    t.assert.strictEqual(table.id.name, "id");
+    t.assert.strictEqual(table.id.type.name, "id");
+    t.assert.strictEqual(table.displayName.name, "displayName");
+    t.assert.strictEqual(table.displayName.type.name, "displayName");
+    t.assert.strictEqual(table.tags.name, "tags");
+    t.assert.strictEqual(table.tags.type.name, "tags");
+    t.assert.strictEqual(table.tags.type.item.name, "tags");
   });
   await suite("should create kysely definitions", async () => {
     const Companies = pgTable("professional.companies", {

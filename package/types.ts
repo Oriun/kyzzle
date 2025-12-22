@@ -13,19 +13,29 @@ import type { ColumnType } from "kysely";
  */
 export type PgIdentifier = `${string}.${string}`;
 
-export type PgTableColumnDefinition = Record<string, DataType<string, string>>;
+type ResolvedName<MaybeName, Key extends string> = MaybeName extends string
+  ? MaybeName
+  : Key;
+
+export type PgTableColumnDefinition = Record<
+  string,
+  DataType<any, PgKnownTypes | (string & {}), any, any, any>
+>;
+
 export type PgTableDefinition<
   TableName extends PgIdentifier,
   ColumnDefinition extends PgTableColumnDefinition,
 > = {
   [key in keyof ColumnDefinition & string]: TableColumn<
     TableName,
-    ColumnDefinition[key]["name"],
+    ResolvedName<ColumnDefinition[key]["name"], key>,
     ColumnDefinition[key]["pgType"],
     ColumnDefinition[key]["zodSchema"],
     ColumnDefinition[key] extends DataType<any, any, any, infer Parameters, any>
       ? Parameters
-      : {}
+      : {},
+    key,
+    ColumnDefinition[key]
   >;
 };
 
@@ -239,27 +249,31 @@ export type TableRefinement = (
 
 export type TableColumn<
   Table extends PgIdentifier,
-  Name extends string,
+  Name extends string | undefined,
   PgType extends PgKnownTypes | (string & {}),
   ZodSchemaType extends ZodType,
   ParametersType extends {},
+  Key extends string = string,
+  Type extends DataType<any, PgType, ZodSchemaType, ParametersType, any> = DataType<any, PgType, ZodSchemaType, ParametersType, any>,
 > = {
   table: Table;
-  name: Name;
-  type: DataType<Name, PgType, ZodSchemaType, ParametersType, any>;
+  name: ResolvedName<Name, Key>;
+  type: Type;
   __brand?: "TableColumn";
 };
 
 export type CompositeTypeField<
   Composite extends PgIdentifier,
-  Name extends string,
+  Name extends string | undefined,
   PgType extends PgKnownTypes | (string & {}),
   ZodSchemaType extends ZodType,
   ParametersType extends {},
+  Key extends string = string,
+  Type extends DataType<any, PgType, ZodSchemaType, ParametersType, any> = DataType<any, PgType, ZodSchemaType, ParametersType, any>,
 > = {
   compositeType: Composite;
-  name: Name;
-  type: DataType<Name, PgType, ZodSchemaType, ParametersType, any>;
+  name: ResolvedName<Name, Key>;
+  type: Type;
   __brand?: "CompositeTypeField";
 };
 
@@ -269,12 +283,14 @@ export type PgCompositeTypeDefinition<
 > = {
   [key in keyof FieldsDefinition & string]: CompositeTypeField<
     CompositeName,
-    FieldsDefinition[key]["name"],
+    ResolvedName<FieldsDefinition[key]["name"], key>,
     FieldsDefinition[key]["pgType"],
     FieldsDefinition[key]["zodSchema"],
     FieldsDefinition[key] extends DataType<any, any, any, infer Parameters>
       ? Parameters
-      : {}
+      : {},
+    key,
+    FieldsDefinition[key]
   >;
 };
 
@@ -327,7 +343,7 @@ type UpdateOutput<
         >
       >;
 
-export type ToColumnType<Type extends DataType<any, any, any>> =
+export type ToColumnType<Type extends DataType<any, any, any, any, any>> =
   Type extends DataType<any, any, infer ZodSchemaType, infer Parameters, any>
     ? ColumnType<
         SelectOutput<ZodSchemaType, Parameters>,
@@ -336,20 +352,16 @@ export type ToColumnType<Type extends DataType<any, any, any>> =
       >
     : never;
 type TableColumnKeys<Table> = {
-  [K in keyof Table]: Table[K] extends TableColumn<any, any, any, any, any>
+  [K in keyof Table]: Table[K] extends TableColumn<any, any, any, any, any, any>
     ? K
     : never;
 }[keyof Table];
 
 export type ToTableType<Table> = {
-  [column in TableColumnKeys<Table>]: Table[column] extends TableColumn<
-    any,
-    any,
-    any,
-    any,
-    any
-  >
-    ? ToColumnType<Table[column]["type"]>
+  [column in TableColumnKeys<Table>]: Table[column] extends infer Column
+    ? Column extends TableColumn<any, any, any, any, any, any>
+      ? ToColumnType<Column["type"]>
+      : never
     : never;
 };
 
@@ -362,14 +374,17 @@ export type KyselyTables<Tables extends Record<string, any>> =
         >]["table"]]: {
           [column in TableColumnKeys<
             Tables[TableName]
-          >]: Tables[TableName][column] extends TableColumn<
-            any,
-            any,
-            any,
-            any,
-            any
-          >
-            ? ToColumnType<Tables[TableName][column]["type"]>
+          >]: Tables[TableName][column] extends infer Column
+            ? Column extends TableColumn<
+                any,
+                any,
+                any,
+                any,
+                any,
+                any
+              >
+              ? ToColumnType<Column["type"]>
+              : never
             : never;
         };
       };

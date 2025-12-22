@@ -115,19 +115,22 @@ export function pgTable<
     );
 
   const columnsDefinition = entries(definition);
-
+ 
   if (!columnsDefinition.length)
     throw new Error(`Table ${tableName} has no columns`);
-  for (const [key, value] of columnsDefinition)
+  for (const [key, value] of columnsDefinition) {
     if (!(value instanceof DataType))
       throw new Error(
         `Invalid column ${key}. Definition does not involve a DataType, example: "text(...)" or "integer(...)".`,
       );
-
+    value.setNameIfEmpty(key as string);
+  }
+ 
   const table = fromEntries(
     columnsDefinition.map(([key, value]) => {
+      const columnName: string = value.name ?? (key as string);
       const col = {
-        name: value.name,
+        name: columnName,
         table: tableName,
         type: value,
       } as const;
@@ -140,7 +143,8 @@ export function pgTable<
         }),
       ];
     }),
-  );
+  ) as unknown as PgTableDefinition<TableName, ColumnDefinition>;
+
   const rawDefinitions =
     _constraints?.(table as PgTableDefinition<TableName, ColumnDefinition>) ??
     [];
@@ -207,19 +211,22 @@ export function pgCompositeType<
     );
 
   const fieldsDefinition = entries(definition);
-
+ 
   if (!fieldsDefinition.length)
     throw new Error(`Composite type ${compositeTypeName} has no fields`);
-  for (const [key, value] of fieldsDefinition)
+  for (const [key, value] of fieldsDefinition) {
     if (!(value instanceof DataType))
       throw new Error(
         `Invalid field ${key}. Definition does not involve a DataType, example: "text(...)" or "integer(...)".`,
       );
-
+    value.setNameIfEmpty(key as string);
+  }
+ 
   const fields = fromEntries(
     fieldsDefinition.map(([key, value]) => {
+      const fieldName: string = value.name ?? (key as string);
       const field = {
-        name: value.name,
+        name: fieldName,
         compositeType: compositeTypeName,
         type: value,
       } as const;
@@ -232,30 +239,33 @@ export function pgCompositeType<
         }),
       ];
     }),
-  ) as PgCompositeTypeDefinition<CompositeTypeName, FieldsDefinition>;
+  ) as unknown as PgCompositeTypeDefinition<CompositeTypeName, FieldsDefinition>;
+
 
   const schema = selectSchema(fields);
 
   const defaultInputShape: Record<string, ReturnType<ZodType["optional"]>> = {};
   for (const [key, value] of fieldsDefinition) {
     const optionalSchema = value.zodSchema.optional();
+    const fieldName: string = value.name ?? (key as string);
     defaultInputShape[key] = optionalSchema;
-    if (value.name !== key) defaultInputShape[value.name] = optionalSchema;
+    if (fieldName !== key) defaultInputShape[fieldName] = optionalSchema;
   }
   const defaultInputSchema = object(defaultInputShape)
     .strict()
     .transform((val) => {
       const normalized: Record<string, unknown> = {};
       for (const [key, value] of fieldsDefinition) {
+        const fieldName: string = value.name ?? (key as string);
         const fromCode = (val as Record<string, unknown>)[key];
-        const fromDb = (val as Record<string, unknown>)[value.name];
+        const fromDb = (val as Record<string, unknown>)[fieldName];
         const chosen =
           fromCode !== undefined
             ? fromCode
             : fromDb !== undefined
               ? fromDb
               : undefined;
-        if (chosen !== undefined) normalized[value.name] = chosen;
+        if (chosen !== undefined) normalized[fieldName] = chosen;
       }
       return normalized;
     });

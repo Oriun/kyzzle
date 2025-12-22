@@ -38,7 +38,7 @@ export type ArrayParameters<ItemsNullable extends boolean> =
   };
 
 export class ArrayType<
-  Item extends DataType<string, PgKnownTypes | (string & {}), ItemSchema>,
+  Item extends DataType<string | undefined, PgKnownTypes | (string & {}), ItemSchema>,
   ItemSchema extends ZodType = InferZodSchema<Item>,
   ItemsNullable extends boolean = true,
 > extends DataType<
@@ -99,8 +99,14 @@ export class ArrayType<
   computeType(): string {
     return `${this.item.computeType()}[]`;
   }
-
+ 
+  setNameIfEmpty(name: string) {
+    super.setNameIfEmpty(name);
+    this.item.setNameIfEmpty(name);
+  }
+ 
   private refreshSchema() {
+
     const itemSchema = (
       this.itemsAreNullable
         ? this.item.zodSchema.nullable()
@@ -146,7 +152,7 @@ export class ArrayType<
 }
 
 export const array = <
-  Item extends DataType<string, PgKnownTypes | (string & {}), ItemSchema>,
+  Item extends DataType<string | undefined, PgKnownTypes | (string & {}), ItemSchema>,
   ItemSchema extends ZodType = InferZodSchema<Item>,
 >(
   type: Item,

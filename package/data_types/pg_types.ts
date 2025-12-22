@@ -12,7 +12,7 @@ type IntegerPgType<Size extends 2 | 4 | 8> = Size extends 2
     ? "integer"
     : "bigint";
 
-export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
+export class Integer<T extends string | undefined, Size extends 2 | 4 | 8> extends DataType<
   T,
   IntegerPgType<Size>,
   ZodNumber
@@ -22,7 +22,7 @@ export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   public minInclusive?: number;
   public maxInclusive?: number;
   public divisibleBy?: number;
-  constructor(name: T, parameters: { size: Size }) {
+  constructor(name: T | undefined, parameters: { size: Size }) {
     const pgType = (
       parameters.size === 2
         ? "smallint"
@@ -91,20 +91,23 @@ export class Integer<T extends string, Size extends 2 | 4 | 8> extends DataType<
   }
 }
 
-export class Bool<T extends string> extends DataType<T, "boolean"> {
-  constructor(name: T) {
+export class Bool<T extends string | undefined> extends DataType<
+  T,
+  "boolean"
+> {
+  constructor(name: T | undefined) {
     super(name, "boolean");
   }
 }
 
 export class BoundedString<
-  T extends string,
+  T extends string | undefined,
   Mode extends "char" | "varchar",
   Parameters extends ParametersWithTypeImpact,
 > extends DataType<T, Mode, ZodString, Parameters> {
   length: number;
   pattern?: RegExp;
-  constructor(name: T, parameters: { mode: Mode; length: number }) {
+  constructor(name: T | undefined, parameters: { mode: Mode; length: number }) {
     super(name, parameters.mode);
     this.length = parameters.length;
   }
@@ -118,14 +121,18 @@ export class BoundedString<
   }
 }
 
-export class UnBoundedString<T extends string> extends DataType<T, "text"> {
+export class UnBoundedString<T extends string | undefined> extends DataType<
+  T,
+  "text"
+> {
   public maxLength?: number;
   public minLength?: number;
   public pattern?: RegExp;
-
-  constructor(name: T) {
+ 
+  constructor(name: T | undefined) {
     super(name, "text");
   }
+
   length(length: number) {
     return this.min(length).max(length);
   }
@@ -147,7 +154,7 @@ export class UnBoundedString<T extends string> extends DataType<T, "text"> {
 }
 
 export class JsonObject<
-  T extends string,
+  T extends string | undefined,
   Mode extends "json" | "jsonb",
   Schema extends ZodType,
 > extends DataType<
@@ -158,14 +165,14 @@ export class JsonObject<
   output<Schema> | SQLExpression
 > {
   public zodSchema: Schema;
-  constructor(name: T, parameters: { mode: Mode; schema: Schema }) {
+  constructor(name: T | undefined, parameters: { mode: Mode; schema: Schema }) {
     super(name, parameters.mode);
     this.zodSchema = parameters.schema;
   }
 }
 
 export class Timestamp<
-  T extends string,
+  T extends string | undefined,
   Mode extends "timestamp" | "timestamptz",
 > extends DataType<T, Mode> {
   public precision?: number;
@@ -173,7 +180,7 @@ export class Timestamp<
   public maxDate?: Date;
 
   constructor(
-    name: T,
+    name: T | undefined,
     parameters: {
       withTimezone: Mode extends "timestamptz" ? true : false;
       precision?: number;
@@ -208,22 +215,26 @@ export class Timestamp<
   }
 }
 
-export class PgDate<T extends string> extends DataType<T, "date"> {
-  constructor(name: T) {
+export class PgDate<T extends string | undefined> extends DataType<
+  T,
+  "date"
+> {
+  constructor(name: T | undefined) {
     super(name, "date");
   }
 }
-
+ 
 export class UnParametered<
-  T extends string,
+  T extends string | undefined,
   Type extends PgKnownTypes | (string & {}),
 > extends DataType<T, Type> {
-  constructor(name: T, parameters: { type: Type }) {
+  constructor(name: T | undefined, parameters: { type: Type }) {
     super(name, parameters.type);
   }
 }
+ 
+export class Numeric<T extends string | undefined> extends DataType<T, "numeric"> {
 
-export class Numeric<T extends string> extends DataType<T, "numeric"> {
   public precision?: number;
   public scale?: number;
   public minExclusive?: number;
@@ -232,7 +243,7 @@ export class Numeric<T extends string> extends DataType<T, "numeric"> {
   public maxInclusive?: number;
   public divisibleBy?: number;
   constructor(
-    name: T,
+    name: T | undefined,
     parameters: { precision?: number; scale?: number } = {},
   ) {
     super(name, "numeric");
@@ -304,14 +315,14 @@ export class Numeric<T extends string> extends DataType<T, "numeric"> {
 }
 
 export class UserDefined<
-  T extends string,
+  T extends string | undefined,
   Type extends string,
   Schema extends ZodType,
   Parameters extends ParametersWithTypeImpact = {},
   DefaultType = output<Schema> | SQLExpression,
 > extends DataType<T, Type, Schema, Parameters, DefaultType> {
   public zodSchema: Schema;
-  constructor(name: T, parameters: { type: Type; schema: Schema }) {
+  constructor(name: T | undefined, parameters: { type: Type; schema: Schema }) {
     super(name, parameters.type);
     this.zodSchema = parameters.schema;
   }

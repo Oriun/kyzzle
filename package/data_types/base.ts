@@ -9,7 +9,7 @@ import { flatTemplateStringArray } from "../utils";
 import { TypesToZod, pgKnownKeywords } from "./constants";
 
 export abstract class DataType<
-  T extends string,
+  T extends string | undefined,
   PgType extends PgKnownTypes | (string & {}),
   //@ts-ignore
   ZodschemaType extends ZodType = PgType extends keyof typeof TypesToZod
@@ -27,14 +27,15 @@ export abstract class DataType<
   public generatedAlwaysExpression?: SQLExpression = undefined;
   public zodSchema: ZodschemaType;
   public constraints: { type: string; definition: string }[] = [];
-  constructor(
-    public readonly name: T,
-    public readonly pgType: PgType,
-  ) {
+  constructor(public name: T | undefined, public readonly pgType: PgType) {
     this.zodSchema = (TypesToZod[pgType as keyof typeof TypesToZod] ??
       any()) as unknown as ZodschemaType;
   }
+  setNameIfEmpty(name: string) {
+    if (this.name === undefined) this.name = name as T;
+  }
   computeType(): string {
+
     return this.pgType;
   }
   notNull() {
