@@ -60,13 +60,13 @@ export function json<T extends string, SchemaType extends ZodType>(
 ): JsonObject<T, "json", SchemaType>;
 export function json<SchemaType extends ZodType>(
   schema: SchemaType,
-): JsonObject<undefined, "json", SchemaType>;
+): JsonObject<string, "json", SchemaType>;
 export function json<T extends string | undefined, SchemaType extends ZodType>(
   nameOrSchema: T | SchemaType,
   schema?: SchemaType,
 ) {
   if (schema === undefined)
-    return new JsonObject<undefined, "json", SchemaType>(undefined, {
+    return new JsonObject<string, "json", SchemaType>(undefined, {
       mode: "json",
       schema: nameOrSchema as SchemaType,
     });
@@ -79,13 +79,13 @@ export function jsonb<T extends string, SchemaType extends ZodType>(
 ): JsonObject<T, "jsonb", SchemaType>;
 export function jsonb<SchemaType extends ZodType>(
   schema: SchemaType,
-): JsonObject<undefined, "jsonb", SchemaType>;
+): JsonObject<string, "jsonb", SchemaType>;
 export function jsonb<T extends string | undefined, SchemaType extends ZodType>(
   nameOrSchema: T | SchemaType,
   schema?: SchemaType,
 ) {
   if (schema === undefined)
-    return new JsonObject<undefined, "jsonb", SchemaType>(undefined, {
+    return new JsonObject<string, "jsonb", SchemaType>(undefined, {
       mode: "jsonb",
       schema: nameOrSchema as SchemaType,
     });

@@ -18,11 +18,34 @@ suite("JsonObject data type", async () => {
   const JsonDocuments = pgTable("public.json_documents", {
     payload: jsonb("payload", payloadSchema).notNull(),
   });
-
+  const JsonNoName = pgTable("public.json_documents_noname", {
+    payload: jsonb(payloadSchema).notNull(),
+  });
+ 
   type JsonTable = ToTableType<typeof JsonDocuments>;
-
+  type JsonNoNameTable = ToTableType<typeof JsonNoName>;
+ 
   await test("type inference", () => {
     type SelectRow = Selectable<JsonTable>;
+    type NoNameSelectRow = Selectable<JsonNoNameTable>;
+    const _validNoNameSelect: NoNameSelectRow[] = [{ payload: { foo: "bar" } }];
+    // @ts-expect-error missing required payload
+    const _invalidNoNameSelect: NoNameSelectRow = {};
+
+    type NoNameInsert = Insertable<JsonNoNameTable>;
+    const _validNoNameInsert: NoNameInsert[] = [{ payload: { foo: "bar" } }];
+    // @ts-expect-error schema must match
+    const _invalidNoNameInsert: NoNameInsert = { payload: { foo: 1 } };
+    // @ts-expect-error null not allowed when notNull()
+    const _nullNoNameInsert: NoNameInsert = { payload: null };
+
+    type NoNameUpdate = Updateable<JsonNoNameTable>;
+    const _validNoNameUpdate: NoNameUpdate[] = [{ payload: { foo: "baz" } }, {}];
+    // @ts-expect-error updates must match schema
+    const _invalidNoNameUpdate: NoNameUpdate = { payload: "oops" };
+
+    type SelectRow = Selectable<JsonTable>;
+
     const _validSelect: SelectRow[] = [
       { payload: { foo: "bar" } },
       { payload: { foo: "bar", count: 3 } },
