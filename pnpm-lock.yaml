@@ -17,7 +17,7 @@ importers:
         version: 24.10.1
       '@types/pg':
         specifier: ^8.15.6
-        version: 8.15.6
+        version: 8.16.0
       kysely:
         specifier: ^0.28.8
         version: 0.28.8
@@ -196,8 +196,8 @@ packages:
   '@types/node@24.10.1':
     resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
-  '@types/pg@8.15.6':
-    resolution: {integrity: sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ==}
+  '@types/pg@8.16.0':
+    resolution: {integrity: sha512-RmhMd/wD+CF8Dfo+cVIy3RR5cl8CyfXQ0tGgW6XBL8L4LM/UTEbNXYRbLwU6w+CgrKBNbrQWt4FUtTfaU5jSYQ==}
 
   esbuild@0.25.12:
     resolution: {integrity: sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==}
@@ -382,7 +382,7 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
-  '@types/pg@8.15.6':
+  '@types/pg@8.16.0':
     dependencies:
       '@types/node': 24.10.1
       pg-protocol: 1.10.3
